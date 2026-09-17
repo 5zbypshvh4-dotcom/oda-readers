@@ -192,10 +192,19 @@ function resolveColumn(sheet, sourceCol, targetCol) {
   for (var i = 1; i < values.length; i++) {
     var src = String(values[i][srcIdx] || '').trim();
     if (!src || src.indexOf('instagram.com') === -1) continue;
+    var current = String(values[i][tgtIdx] || '');
     var resolved = resolveInstagramUrl(src);
     if (resolved) {
       sheet.getRange(i + 1, tgtIdx + 1).setValue(resolved);
+    } else if (current.indexOf('static.cdninstagram.com') !== -1) {
+      // A previous run stored Instagram's generic placeholder by mistake -
+      // clear it instead of leaving a broken-looking photo in the gallery.
+      sheet.getRange(i + 1, tgtIdx + 1).setValue('');
     }
+    // Small pause between requests - firing them back-to-back makes
+    // Instagram rate-limit us faster (it starts returning its generic
+    // placeholder image instead of the real post photo).
+    Utilities.sleep(1500);
   }
 }
 
@@ -205,7 +214,16 @@ function resolveInstagramUrl(url) {
     if (res.getResponseCode() >= 400) return '';
     var html = res.getContentText();
     var match = html.match(/<meta property="og:image" content="([^"]+)"/);
-    if (match && match[1]) return match[1].replace(/&amp;/g, '&');
+    if (match && match[1]) {
+      var resolved = match[1].replace(/&amp;/g, '&');
+      // When Instagram blocks/rate-limits an automated request it still
+      // returns a page with an og:image tag, but pointing at its generic
+      // placeholder icon (static.cdninstagram.com) instead of the real
+      // post photo (served from a scontent-*.cdninstagram.com host).
+      // Treat that as a failure so we don't store a broken-looking photo.
+      if (resolved.indexOf('static.cdninstagram.com') !== -1) return '';
+      return resolved;
+    }
   } catch (err) {
     // Instagram sometimes blocks automated requests - just skip this row,
     // the old value (if any) stays, we'll try again next time.
