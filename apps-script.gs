@@ -1,31 +1,30 @@
 /**
- * ODA Readers — Apps Script для Google Таблиці.
+ * ODA Readers - Apps Script for the Google Sheet.
  *
- * Що робить:
- * 1. Приймає реєстрацію з сайту (імʼя, email, подія) і записує рядок у вкладку Signups.
- * 2. Якщо людина позначила чекбокс "Додати у свій Google Calendar" — створює один
- *    спільний Google Calendar-івент на подію (один раз) і додає її гостею туди ж.
- * 3. Раз на кілька годин (за таймером) автоматично перетворює посилання на пости
- *    в Instagram (вкладки Events і Gallery) на прямі посилання на фото — щоб банер
- *    подій і фотогалерея на сайті підтягували реальні картинки без ручного завантаження.
+ * What it does:
+ * 1. Accepts signups from the site (name, email, event) and appends a row to the Signups tab.
+ * 2. If the person checked "Add to my Google Calendar" - creates one shared Google Calendar
+ *    event per event (once) and adds them as a guest to that same event.
+ * 3. Every few hours (on a timer) automatically resolves Instagram post links (Events and
+ *    Gallery tabs) into direct photo URLs, so the event banner and photo gallery on the site
+ *    can show real pictures without manual uploads.
  *
- * Встановлення:
- * 1. Відкрий свою Google Таблицю (нативний формат, не .xlsx!).
- * 2. Меню Extensions → Apps Script.
- * 3. Видали код-заглушку, встав увесь код нижче, збережи.
- * 4. Зліва в редакторі — Services → натисни "+" → знайди "Calendar API" →
- *    Add. Без цього кроку пряме посилання "Підтвердити участь у
- *    календарі" не працюватиме (сайт тоді просто покаже запасний варіант
- *    "Перейти в календар" замість нього).
- * 5. Deploy → New deployment → тип "Web app".
+ * Setup:
+ * 1. Open your Google Sheet (native format, not .xlsx!).
+ * 2. Menu Extensions -> Apps Script.
+ * 3. Delete the placeholder code, paste in ALL the code below, save.
+ * 4. On the left of the editor - Services -> click "+" -> find "Calendar API" -> Add.
+ *    Without this step the direct "Confirm attendance in calendar" link won't work
+ *    (the site will just fall back to the "Open in calendar" personal-copy link instead).
+ * 5. Deploy -> New deployment -> type "Web app".
  *    Execute as: Me. Who has access: Anyone.
- * 6. Deploy → дозволь доступ до Calendar і Sheets під своїм акаунтом.
- * 7. Скопіюй Web app URL і встав його в CONFIG.SIGNUP_ENDPOINT_URL у index.html сайту.
- * 8. Один раз запусти функцію createRefreshTrigger (вибери її у випадному списку
- *    вгорі редактора Apps Script і натисни Run) — це увімкне автоматичне оновлення
- *    фото з Instagram кожні 6 годин. Дозволь доступ, якщо попросить.
- * 9. Онов сторінку зі своєю таблицею — угорі зʼявиться меню "ODA Tools", де можна
- *    запустити оновлення фото вручну в будь-який момент.
+ * 6. Deploy -> allow access to Calendar and Sheets with your account.
+ * 7. Copy the Web app URL and paste it into CONFIG.SIGNUP_ENDPOINT_URL in the site's index.html.
+ * 8. Run the createRefreshTrigger function once manually (pick it from the function dropdown
+ *    at the top of the Apps Script editor and click Run) - this turns on automatic photo
+ *    refreshing from Instagram every 6 hours. Grant access if asked.
+ * 9. Reload the page with your spreadsheet - an "ODA Tools" menu will appear at the top,
+ *    where you can trigger a photo refresh manually at any time.
  */
 
 function doPost(e) {
@@ -34,7 +33,7 @@ function doPost(e) {
   var eventsSheet = ss.getSheetByName('Events');
   var signupsSheet = ss.getSheetByName('Signups');
 
-  // 1. Записуємо реєстрацію в таблицю
+  // 1. Record the signup in the sheet
   signupsSheet.appendRow([
     new Date(), data.eventTitle, data.city, data.name, data.email,
     data.addToCalendar ? 'так' : 'ні'
@@ -44,13 +43,13 @@ function doPost(e) {
     return jsonResponse({ok:true});
   }
 
-  // 2. Знаходимо подію в таблиці Events
+  // 2. Find the event in the Events sheet
   var values = eventsSheet.getDataRange().getValues();
-  // Google Sheets зберігає час ("13:00") як внутрішній Date-об'єкт, зіставлений
-  // з 30 грудня 1899-го — а для цієї історичної дати в багатьох часових поясах
-  // (зокрема Бухарест/Кишинів) діє старий "місцевий середній час" з дивним
-  // зсувом замість сучасного, тому .getHours() на такому об'єкті повертає
-  // сміття. Обходимо це, читаючи текст так, як він відображається в таблиці.
+  // Google Sheets stores a time value ("13:00") as an internal Date object anchored to
+  // Dec 30, 1899 - and for that historical date, many Eastern European timezones (including
+  // Bucharest/Chisinau) use an old Local Mean Time offset instead of the modern one, so
+  // .getHours() on that object returns garbage. We work around this by reading the text
+  // exactly as it's displayed in the sheet instead.
   var displayValues = eventsSheet.getDataRange().getDisplayValues();
   var headers = values[0];
   var col = {};
@@ -72,28 +71,28 @@ function doPost(e) {
 
   if (existingId) {
     calEvent = calendar.getEventById(existingId);
-    // Захист від старого багу: якщо кешований івент має биту дату
-    // (напр. 1970 рік через невірний парсинг часу) — не використовуємо
-    // його повторно, перестворюємо нижче.
+    // Guard against an old bug: if the cached event has a corrupted date
+    // (e.g. year 1970 from a past bad time parse), don't reuse it -
+    // recreate it below instead.
     try {
       if (calEvent && calEvent.getStartTime().getFullYear() < 2020) {
         calEvent.deleteEvent();
         calEvent = null;
       }
     } catch (err) {
-      // Подія вже видалена вручну або інакше недоступна — просто створимо нову.
+      // Event was already deleted manually or is otherwise unavailable - just create a new one.
       calEvent = null;
     }
   }
 
-  // 3. Якщо спільного івенту в календарі ще нема — створюємо один раз
+  // 3. If the shared event doesn't exist in the calendar yet - create it once
   if (!calEvent) {
     var dateVal = row[col.date] instanceof Date ? row[col.date] : new Date(row[col.date]);
     var start = combineDateTime(dateVal, displayRow[col.time_start]);
     var end = combineDateTime(dateVal, displayRow[col.time_end]);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
-      // Не валимо весь запис через биту дату/час — повертаємо, що саме
-      // не так, замість непрозорого винятку від Calendar API.
+      // Don't blow up the whole request over a bad date/time - report what's
+      // wrong instead of an opaque exception from the Calendar API.
       return jsonResponse({
         ok:false,
         error:'bad event date/time',
@@ -112,11 +111,11 @@ function doPost(e) {
     eventsSheet.getRange(rowIndex + 1, col.calendar_event_id + 1).setValue(calEvent.getId());
   }
 
-  // 4. Додаємо людину гостем у той самий спільний івент
+  // 4. Add the person as a guest to that same shared event
   calEvent.addGuest(data.email);
 
-  // 5. Пряме посилання "підтвердити участь" — те саме, що кнопка "Так" у
-  //    email-запрошенні, але без походу в пошту (rst=1 = одразу "Так").
+  // 5. Direct "confirm attendance" link - the same as the "Yes" button in the
+  //    email invite, but without having to open email (rst=1 = accept right away).
   var rsvpUrl = buildRsvpUrl(calEvent, calendar);
 
   return jsonResponse({ok:true, calendarRsvpUrl: rsvpUrl});
@@ -127,12 +126,12 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// timeStr — текст так, як він показаний у таблиці (напр. "13:00"), взятий
-// через getDisplayValues(). Навмисно НЕ читаємо це як Date-об'єкт: Google
-// Sheets зберігає час прив'язаним до 30 грудня 1899-го, а для цієї
-// історичної дати в часовому поясі Бухарест/Кишинів діє старий "місцевий
-// середній час" (+01:44:24) замість сучасного — тому .getHours() на такому
-// об'єкті повертає безглузді значення.
+// timeStr - text exactly as shown in the sheet (e.g. "13:00"), taken via
+// getDisplayValues(). Deliberately NOT read as a Date object: Google Sheets
+// anchors time values to Dec 30, 1899, and for that historical date the
+// Bucharest/Chisinau timezone uses an old Local Mean Time offset (+01:44:24)
+// instead of the modern one - so .getHours() on that object returns
+// nonsense values.
 function combineDateTime(dateVal, timeStr) {
   var d = new Date(dateVal.getTime());
   var parts = String(timeStr).split(':');
@@ -141,12 +140,12 @@ function combineDateTime(dateVal, timeStr) {
 }
 
 /**
- * Будує пряме RSVP-посилання ("Так" з email-запрошення), використовуючи
- * справжній ідентифікатор події з Calendar API — той самий, який Google
- * підставляє в кнопку "Так" у листах. CalendarApp.getId() повертає інший
- * формат (iCalUID), який для цього посилання не підходить, тому шукаємо
- * подію через увімкнений розширений сервіс Calendar API.
- * Потребує: Apps Script → Services (+) → Calendar API.
+ * Builds a direct RSVP link ("Yes" from the email invite), using the real
+ * event id from the Calendar API - the same one Google puts into the "Yes"
+ * button in emails. CalendarApp.getId() returns a different format
+ * (iCalUID) that doesn't work for this link, so we look the event up
+ * through the Calendar advanced service instead.
+ * Requires: Apps Script -> Services (+) -> Calendar API.
  */
 function buildRsvpUrl(calEvent, calendar) {
   var apiId = findApiEventId(calEvent.getId());
@@ -160,21 +159,21 @@ function findApiEventId(iCalUID) {
     var res = Calendar.Events.list('primary', { iCalUID: iCalUID, maxResults: 1 });
     if (res.items && res.items.length) return res.items[0].id;
   } catch (err) {
-    // Розширений сервіс Calendar API не увімкнено — просто не додаємо RSVP-лінк,
-    // сайт покаже запасний варіант "Перейти в календар" замість нього.
+    // Calendar API advanced service isn't enabled - just skip the RSVP link,
+    // the site will fall back to the "Open in calendar" link instead.
   }
   return '';
 }
 
 /**
- * ==== АВТОМАТИЧНЕ РОЗПІЗНАВАННЯ ФОТО З INSTAGRAM ====
- * Читає посилання на пости в Instagram (з колонки image_url у Events і post_url
- * у Gallery) і зберігає пряме посилання на фото в сусідню колонку
- * (image_resolved / resolved_url), яку вже читає сайт.
- * Instagram віддає банерам-краулерам (для прев'ю посилань) картинку через
- * стандартний og:image тег — саме цей механізм тут і використовується.
- * Посилання на фото в Instagram діють кілька днів, тому функція запускається
- * за таймером (createRefreshTrigger) і оновлює їх раніше, ніж вони протухнуть.
+ * ==== AUTOMATIC INSTAGRAM PHOTO RESOLUTION ====
+ * Reads Instagram post links (from the image_url column in Events and post_url
+ * in Gallery) and stores a direct photo URL in the neighboring column
+ * (image_resolved / resolved_url), which the site already reads.
+ * Instagram serves link-preview crawlers a photo via the standard og:image
+ * meta tag - that's the mechanism used here.
+ * Instagram photo links expire after a few days, so this function runs on a
+ * timer (createRefreshTrigger) and refreshes them before they go stale.
  */
 function refreshInstagramImages() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -208,14 +207,14 @@ function resolveInstagramUrl(url) {
     var match = html.match(/<meta property="og:image" content="([^"]+)"/);
     if (match && match[1]) return match[1].replace(/&amp;/g, '&');
   } catch (err) {
-    // Instagram іноді блокує автоматичні запити — просто пропускаємо цей рядок,
-    // старе значення (якщо було) лишається, спробуємо ще раз наступного разу.
+    // Instagram sometimes blocks automated requests - just skip this row,
+    // the old value (if any) stays, we'll try again next time.
   }
   return '';
 }
 
-/** Запусти ОДИН РАЗ вручну (вибери у списку функцій угорі редактора → Run),
- *  щоб увімкнути автооновлення фото кожні 6 годин. */
+/** Run this ONCE manually (pick it from the function list at the top of the
+ *  editor -> Run) to turn on automatic photo refreshing every 6 hours. */
 function createRefreshTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'refreshInstagramImages') ScriptApp.deleteTrigger(t);
@@ -226,7 +225,7 @@ function createRefreshTrigger() {
     .create();
 }
 
-/** Додає меню "ODA Tools" у таблицю для ручного оновлення фото. */
+/** Adds an "ODA Tools" menu to the sheet for manually refreshing photos. */
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('ODA Tools')
     .addItem('Оновити фото з Instagram зараз', 'refreshInstagramImages')
