@@ -196,16 +196,29 @@ function resolveColumn(sheet, sourceCol, targetCol) {
     var resolved = resolveInstagramUrl(src);
     if (resolved) {
       sheet.getRange(i + 1, tgtIdx + 1).setValue(resolved);
-    } else if (current.indexOf('static.cdninstagram.com') !== -1) {
-      // A previous run stored Instagram's generic placeholder by mistake -
-      // clear it instead of leaving a broken-looking photo in the gallery.
+    } else if (current && !looksLikeRealPhoto(current)) {
+      // A previous run stored something bad (Instagram's generic
+      // placeholder icon, or - when blocked - even the post's own page
+      // URL echoed back instead of a photo) - clear it instead of leaving
+      // a broken-looking image in the gallery.
       sheet.getRange(i + 1, tgtIdx + 1).setValue('');
     }
     // Small pause between requests - firing them back-to-back makes
-    // Instagram rate-limit us faster (it starts returning its generic
-    // placeholder image instead of the real post photo).
+    // Instagram rate-limit us faster (it starts blocking real photo
+    // fetches sooner).
     Utilities.sleep(1500);
   }
+}
+
+// Real Instagram post photos are served from a scontent-*.cdninstagram.com
+// (or fbcdn.net) host. Anything else - a generic static.cdninstagram.com
+// placeholder icon, or even the post's own instagram.com URL echoed back -
+// means the request got blocked/rate-limited rather than returning a real
+// photo, so it's whitelisted in rather than blacklisting each bad pattern
+// Instagram happens to return.
+function looksLikeRealPhoto(url) {
+  return url.indexOf('scontent') !== -1 &&
+    (url.indexOf('cdninstagram.com') !== -1 || url.indexOf('fbcdn.net') !== -1);
 }
 
 function resolveInstagramUrl(url) {
@@ -216,12 +229,7 @@ function resolveInstagramUrl(url) {
     var match = html.match(/<meta property="og:image" content="([^"]+)"/);
     if (match && match[1]) {
       var resolved = match[1].replace(/&amp;/g, '&');
-      // When Instagram blocks/rate-limits an automated request it still
-      // returns a page with an og:image tag, but pointing at its generic
-      // placeholder icon (static.cdninstagram.com) instead of the real
-      // post photo (served from a scontent-*.cdninstagram.com host).
-      // Treat that as a failure so we don't store a broken-looking photo.
-      if (resolved.indexOf('static.cdninstagram.com') !== -1) return '';
+      if (!looksLikeRealPhoto(resolved)) return '';
       return resolved;
     }
   } catch (err) {
