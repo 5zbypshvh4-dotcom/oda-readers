@@ -68,8 +68,13 @@ function doPost(e) {
     // Захист від старого багу: якщо кешований івент має биту дату
     // (напр. 1970 рік через невірний парсинг часу) — не використовуємо
     // його повторно, перестворюємо нижче.
-    if (calEvent && calEvent.getStartTime().getFullYear() < 2020) {
-      calEvent.deleteEvent();
+    try {
+      if (calEvent && calEvent.getStartTime().getFullYear() < 2020) {
+        calEvent.deleteEvent();
+        calEvent = null;
+      }
+    } catch (err) {
+      // Подія вже видалена вручну або інакше недоступна — просто створимо нову.
       calEvent = null;
     }
   }
