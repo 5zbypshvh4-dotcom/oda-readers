@@ -7,16 +7,20 @@
 
 ## Структура
 - `index.html` — весь сайт (розмітка, стилі, логіка) в одному файлі
+- `apps-script.gs` — код для Google Apps Script: приймає реєстрації, веде спільний
+  Google Calendar-івент на подію, підтягує фото з Instagram (детальна інструкція
+  зі встановлення — коментарем на початку файлу)
 - `photos/` — фото зустрічей та банер-заглушка для подій
 
-## Підʼєднання Google Таблиці (події, книги)
+## Підʼєднання Google Таблиці (події, книги, галерея, реєстрації)
 Відкрий `index.html`, знайди блок `CONFIG` на початку `<script>` і встав туди лінки:
 
 ```js
 const CONFIG = {
   EVENTS_CSV_URL: '',   // Google Sheets → Share → Publish to web → CSV
   BOOKS_CSV_URL: '',
-  SIGNUP_ENDPOINT_URL: '' // Google Apps Script Web App для запису реєстрацій
+  GALLERY_CSV_URL: '',
+  SIGNUP_ENDPOINT_URL: '' // Google Apps Script Web App (apps-script.gs) — інструкція встановлення в самому файлі
 };
 ```
 
