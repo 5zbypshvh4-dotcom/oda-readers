@@ -13,14 +13,18 @@
  * 1. Відкрий свою Google Таблицю (нативний формат, не .xlsx!).
  * 2. Меню Extensions → Apps Script.
  * 3. Видали код-заглушку, встав увесь код нижче, збережи.
- * 4. Deploy → New deployment → тип "Web app".
+ * 4. Зліва в редакторі — Services → натисни "+" → знайди "Calendar API" →
+ *    Add. Без цього кроку пряме посилання "Підтвердити участь у
+ *    календарі" не працюватиме (сайт тоді просто покаже запасний варіант
+ *    "Перейти в календар" замість нього).
+ * 5. Deploy → New deployment → тип "Web app".
  *    Execute as: Me. Who has access: Anyone.
- * 5. Deploy → дозволь доступ до Calendar і Sheets під своїм акаунтом.
- * 6. Скопіюй Web app URL і встав його в CONFIG.SIGNUP_ENDPOINT_URL у index.html сайту.
- * 7. Один раз запусти функцію createRefreshTrigger (вибери її у випадному списку
+ * 6. Deploy → дозволь доступ до Calendar і Sheets під своїм акаунтом.
+ * 7. Скопіюй Web app URL і встав його в CONFIG.SIGNUP_ENDPOINT_URL у index.html сайту.
+ * 8. Один раз запусти функцію createRefreshTrigger (вибери її у випадному списку
  *    вгорі редактора Apps Script і натисни Run) — це увімкне автоматичне оновлення
  *    фото з Instagram кожні 6 годин. Дозволь доступ, якщо попросить.
- * 8. Онов сторінку зі своєю таблицею — угорі зʼявиться меню "ODA Tools", де можна
+ * 9. Онов сторінку зі своєю таблицею — угорі зʼявиться меню "ODA Tools", де можна
  *    запустити оновлення фото вручну в будь-який момент.
  */
 
@@ -97,10 +101,30 @@ function combineDateTime(dateVal, timeStr) {
   return d;
 }
 
+/**
+ * Будує пряме RSVP-посилання ("Так" з email-запрошення), використовуючи
+ * справжній ідентифікатор події з Calendar API — той самий, який Google
+ * підставляє в кнопку "Так" у листах. CalendarApp.getId() повертає інший
+ * формат (iCalUID), який для цього посилання не підходить, тому шукаємо
+ * подію через увімкнений розширений сервіс Calendar API.
+ * Потребує: Apps Script → Services (+) → Calendar API.
+ */
 function buildRsvpUrl(calEvent, calendar) {
-  var rawId = calEvent.getId().split('@')[0];
-  var eid = Utilities.base64EncodeWebSafe(rawId + ' ' + calendar.getId()).replace(/=+$/, '');
+  var apiId = findApiEventId(calEvent.getId());
+  if (!apiId) return '';
+  var eid = Utilities.base64EncodeWebSafe(apiId + ' ' + calendar.getId()).replace(/=+$/, '');
   return 'https://calendar.google.com/calendar/event?action=RESPOND&eid=' + eid + '&rst=1';
+}
+
+function findApiEventId(iCalUID) {
+  try {
+    var res = Calendar.Events.list('primary', { iCalUID: iCalUID, maxResults: 1 });
+    if (res.items && res.items.length) return res.items[0].id;
+  } catch (err) {
+    // Розширений сервіс Calendar API не увімкнено — просто не додаємо RSVP-лінк,
+    // сайт покаже запасний варіант "Перейти в календар" замість нього.
+  }
+  return '';
 }
 
 /**
