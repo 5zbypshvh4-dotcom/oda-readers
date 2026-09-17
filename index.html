@@ -956,8 +956,8 @@
       await submitSignup({ eventId: ev.id, eventTitle: ev.title, city, name, email, addToCalendar, ts: new Date().toISOString() });
       modalBody.innerHTML = `
         <div class="thankyou">
-          <h3>Дякуємо, ${escapeHtml(name)}!</h3>
-          <p>Ми на звʼязку — підтвердимо участь особисто.</p>
+          <h3>До зустрічі, ${escapeHtml(name)}!</h3>
+          <p>І гарного дня!</p>
         </div>`;
     });
     overlay.hidden = false;
