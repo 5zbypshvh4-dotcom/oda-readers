@@ -647,6 +647,12 @@
     return (status || '').trim().toLowerCase() === 'закінчено';
   }
 
+  function escapeHtml(str){
+    return String(str == null ? '' : str).replace(/[&<>"']/g, c => (
+      { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+    ));
+  }
+
   function parseCsv(text){
     const rows = [];
     let row = [], field = '', inQuotes = false;
@@ -683,12 +689,14 @@
       try {
         const rows = await fetchCsvRows(CONFIG.EVENTS_CSV_URL);
         const byCity = { bucharest: [], cluj: [] };
-        rows.forEach(r => {
+        rows.forEach((r, idx) => {
           if (isFinished(r.status)) return;
           const start = r.date && r.time_start ? `${r.date}T${r.time_start}` : r.date;
           const end = r.date && r.time_end ? `${r.date}T${r.time_end}` : r.date;
-          byCity[normalizeCity(r.city)].push({
-            id: r.calendar_event_id || (r.title + r.date),
+          const cityKey = normalizeCity(r.city);
+          byCity[cityKey].push({
+            id: `sheet-${cityKey}-${idx}`,
+            calendarEventId: r.calendar_event_id || '',
             title: r.title, start, end,
             location: r.location, description: r.description,
             image: r.image_url || undefined
@@ -776,20 +784,20 @@
       return;
     }
     heroEl.classList.toggle('has-image', !!ev.image);
-    const banner = ev.image ? `<div class="hero-banner"><img src="${ev.image}" alt="" onerror="this.closest('.hero').classList.remove('has-image'); this.closest('.hero-banner').remove();"></div>` : '';
+    const banner = ev.image ? `<div class="hero-banner"><img src="${escapeHtml(ev.image)}" alt="" onerror="this.closest('.hero').classList.remove('has-image'); this.closest('.hero-banner').remove();"></div>` : '';
     const moreLink = d.events.length > 1 ? `<a class="btn btn-ghost" href="#events">Усі події →</a>` : '';
     document.getElementById('heroContent').innerHTML = `
       <div class="hero-flex">
         <div class="hero-text">
-          <div class="hero-tag">${d.name} · Найближча зустріч</div>
-          <h1>${ev.title}</h1>
+          <div class="hero-tag">${escapeHtml(d.name)} · Найближча зустріч</div>
+          <h1>${escapeHtml(ev.title)}</h1>
           <div class="hero-meta">
             <div><span class="eyebrow">Дата</span><span class="val">${fmtDate(ev.start)}</span></div>
             <div><span class="eyebrow">Час</span><span class="val">${fmtTime(ev.start)}–${fmtTime(ev.end)}</span></div>
-            <div><span class="eyebrow">Місце</span><span class="val">${ev.location}</span></div>
+            <div><span class="eyebrow">Місце</span><span class="val">${escapeHtml(ev.location)}</span></div>
           </div>
           <div class="hero-actions">
-            <button class="btn btn-primary" data-open-event="${ev.id}">Долучитися</button>
+            <button class="btn btn-primary" data-open-event="${escapeHtml(ev.id)}">Долучитися</button>
             ${moreLink}
           </div>
         </div>
@@ -805,10 +813,10 @@
       return;
     }
     list.innerHTML = d.events.map(ev => `
-      <button class="event-card" data-open-event="${ev.id}">
+      <button class="event-card" data-open-event="${escapeHtml(ev.id)}">
         <span class="date-tag">${fmtDate(ev.start)} · ${fmtTime(ev.start)}</span>
-        <h3>${ev.title}</h3>
-        <span class="loc">${ev.location}</span>
+        <h3>${escapeHtml(ev.title)}</h3>
+        <span class="loc">${escapeHtml(ev.location)}</span>
       </button>
     `).join('');
   }
@@ -821,9 +829,9 @@
       return;
     }
     list.innerHTML = d.links.map(l => `
-      <a class="link-btn" href="${l.url}" target="_blank" rel="noopener">
-        <span class="title">${l.title}</span>
-        <span class="desc">${l.desc}</span>
+      <a class="link-btn" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">
+        <span class="title">${escapeHtml(l.title)}</span>
+        <span class="desc">${escapeHtml(l.desc)}</span>
       </a>
     `).join('');
   }
@@ -836,20 +844,20 @@
     if (!d.books.length){
       box.innerHTML = `
         <div class="books-placeholder">
-          Список книг для ${d.name} ще формується — першим дізнаєшся в
-          <a href="${d.telegram}" target="_blank" rel="noopener">Telegram спільноти</a>.
+          Список книг для ${escapeHtml(d.name)} ще формується — першим дізнаєшся в
+          <a href="${escapeHtml(d.telegram)}" target="_blank" rel="noopener">Telegram спільноти</a>.
         </div>`;
       return;
     }
     const shelf = d.books.map((b,i) => `
       <div class="spine-tile${b.cover ? ' has-cover' : ''}" style="background:${SPINE_COLORS[i % SPINE_COLORS.length]}">
-        ${b.cover ? `<img src="${b.cover}" alt="${b.title}" onerror="this.remove(); this.closest('.spine-tile').classList.remove('has-cover');">` : ''}
-        <span>${b.month}</span>
+        ${b.cover ? `<img src="${escapeHtml(b.cover)}" alt="${escapeHtml(b.title)}" onerror="this.remove(); this.closest('.spine-tile').classList.remove('has-cover');">` : ''}
+        <span>${escapeHtml(b.month)}</span>
       </div>`).join('');
     const rows = d.books.map(b => `
       <li>
-        <span class="m">${b.month}</span>
-        <span class="t">${b.title}${b.note ? `<span class="n">${b.note}</span>` : ''}</span>
+        <span class="m">${escapeHtml(b.month)}</span>
+        <span class="t">${escapeHtml(b.title)}${b.note ? `<span class="n">${escapeHtml(b.note)}</span>` : ''}</span>
       </li>`).join('');
     box.innerHTML = `
       <div class="books-layout">
@@ -932,11 +940,11 @@
     const { ev, city } = found;
     modalBody.innerHTML = `
       <span class="eyebrow" id="modalTitle">Реєстрація</span>
-      <h3>${ev.title}</h3>
+      <h3>${escapeHtml(ev.title)}</h3>
       <div class="meta-row">
         <div><span class="k">Дата</span>${fmtDate(ev.start)}</div>
         <div><span class="k">Час</span>${fmtTime(ev.start)}–${fmtTime(ev.end)}</div>
-        <div><span class="k">Місце</span>${ev.location}</div>
+        <div><span class="k">Місце</span>${escapeHtml(ev.location)}</div>
       </div>
       <a class="gcal-link" href="${gcalUrl(ev)}" target="_blank" rel="noopener">+ Додати у свій Google Calendar</a>
       <form id="signupForm">
@@ -957,7 +965,7 @@
       await submitSignup({ eventId: ev.id, eventTitle: ev.title, city, name, email, wantsFuture, ts: new Date().toISOString() });
       modalBody.innerHTML = `
         <div class="thankyou">
-          <h3>Дякуємо, ${name}!</h3>
+          <h3>Дякуємо, ${escapeHtml(name)}!</h3>
           <p>Ми на звʼязку — підтвердимо участь особисто.</p>
         </div>`;
     });
