@@ -65,6 +65,13 @@ function doPost(e) {
 
   if (existingId) {
     calEvent = calendar.getEventById(existingId);
+    // Захист від старого багу: якщо кешований івент має биту дату
+    // (напр. 1970 рік через невірний парсинг часу) — не використовуємо
+    // його повторно, перестворюємо нижче.
+    if (calEvent && calEvent.getStartTime().getFullYear() < 2020) {
+      calEvent.deleteEvent();
+      calEvent = null;
+    }
   }
 
   // 3. Якщо спільного івенту в календарі ще нема — створюємо один раз
@@ -94,10 +101,17 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function combineDateTime(dateVal, timeStr) {
+function combineDateTime(dateVal, timeVal) {
   var d = new Date(dateVal.getTime());
-  var parts = String(timeStr).split(':');
-  d.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
+  // Google Sheets зберігає введений час ("13:00") як Date-об'єкт
+  // (внутрішньо — 30 грудня 1899 р.), а не текст — читаємо години/хвилини
+  // напряму в цьому випадку, інакше беремо це як текстовий рядок "HH:MM".
+  if (timeVal instanceof Date) {
+    d.setHours(timeVal.getHours(), timeVal.getMinutes(), 0, 0);
+  } else {
+    var parts = String(timeVal).split(':');
+    d.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
+  }
   return d;
 }
 
