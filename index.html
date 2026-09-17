@@ -950,6 +950,9 @@
     `;
     document.getElementById('signupForm').addEventListener('submit', async e => {
       e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      if (submitBtn.disabled) return;
+      submitBtn.disabled = true;
       const name = document.getElementById('f-name').value.trim();
       const email = document.getElementById('f-email').value.trim();
       const addToCalendar = document.querySelector('#signupForm [name="addToCalendar"]').checked;
