@@ -3,17 +3,25 @@
  *
  * Що робить:
  * 1. Приймає реєстрацію з сайту (імʼя, email, подія) і записує рядок у вкладку Signups.
- * 2. Створює один спільний Google Calendar-івент на подію (один раз) і додає
- *    кожну нову людину, що записалась, гостею в цей самий спільний івент.
+ * 2. Якщо людина позначила чекбокс "Додати у свій Google Calendar" — створює один
+ *    спільний Google Calendar-івент на подію (один раз) і додає її гостею туди ж.
+ * 3. Раз на кілька годин (за таймером) автоматично перетворює посилання на пости
+ *    в Instagram (вкладки Events і Gallery) на прямі посилання на фото — щоб банер
+ *    подій і фотогалерея на сайті підтягували реальні картинки без ручного завантаження.
  *
  * Встановлення:
- * 1. Відкрий свою Google Таблицю.
+ * 1. Відкрий свою Google Таблицю (нативний формат, не .xlsx!).
  * 2. Меню Extensions → Apps Script.
  * 3. Видали код-заглушку, встав увесь код нижче, збережи.
  * 4. Deploy → New deployment → тип "Web app".
  *    Execute as: Me. Who has access: Anyone.
  * 5. Deploy → дозволь доступ до Calendar і Sheets під своїм акаунтом.
  * 6. Скопіюй Web app URL і встав його в CONFIG.SIGNUP_ENDPOINT_URL у index.html сайту.
+ * 7. Один раз запусти функцію createRefreshTrigger (вибери її у випадному списку
+ *    вгорі редактора Apps Script і натисни Run) — це увімкне автоматичне оновлення
+ *    фото з Instagram кожні 6 годин. Дозволь доступ, якщо попросить.
+ * 8. Онов сторінку зі своєю таблицею — угорі зʼявиться меню "ODA Tools", де можна
+ *    запустити оновлення фото вручну в будь-який момент.
  */
 
 function doPost(e) {
@@ -25,8 +33,13 @@ function doPost(e) {
   // 1. Записуємо реєстрацію в таблицю
   signupsSheet.appendRow([
     new Date(), data.eventTitle, data.city, data.name, data.email,
-    data.wantsFuture ? 'так' : 'ні'
+    data.addToCalendar ? 'так' : 'ні'
   ]);
+
+  if (!data.addToCalendar) {
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // 2. Знаходимо подію в таблиці Events
   var values = eventsSheet.getDataRange().getValues();
@@ -76,4 +89,71 @@ function combineDateTime(dateVal, timeStr) {
   var parts = String(timeStr).split(':');
   d.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
   return d;
+}
+
+/**
+ * ==== АВТОМАТИЧНЕ РОЗПІЗНАВАННЯ ФОТО З INSTAGRAM ====
+ * Читає посилання на пости в Instagram (з колонки image_url у Events і post_url
+ * у Gallery) і зберігає пряме посилання на фото в сусідню колонку
+ * (image_resolved / resolved_url), яку вже читає сайт.
+ * Instagram віддає банерам-краулерам (для прев'ю посилань) картинку через
+ * стандартний og:image тег — саме цей механізм тут і використовується.
+ * Посилання на фото в Instagram діють кілька днів, тому функція запускається
+ * за таймером (createRefreshTrigger) і оновлює їх раніше, ніж вони протухнуть.
+ */
+function refreshInstagramImages() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  resolveColumn(ss.getSheetByName('Events'), 'image_url', 'image_resolved');
+  resolveColumn(ss.getSheetByName('Gallery'), 'post_url', 'resolved_url');
+}
+
+function resolveColumn(sheet, sourceCol, targetCol) {
+  if (!sheet) return;
+  var values = sheet.getDataRange().getValues();
+  var headers = values[0];
+  var srcIdx = headers.indexOf(sourceCol);
+  var tgtIdx = headers.indexOf(targetCol);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+
+  for (var i = 1; i < values.length; i++) {
+    var src = String(values[i][srcIdx] || '').trim();
+    if (!src || src.indexOf('instagram.com') === -1) continue;
+    var resolved = resolveInstagramUrl(src);
+    if (resolved) {
+      sheet.getRange(i + 1, tgtIdx + 1).setValue(resolved);
+    }
+  }
+}
+
+function resolveInstagramUrl(url) {
+  try {
+    var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+    if (res.getResponseCode() >= 400) return '';
+    var html = res.getContentText();
+    var match = html.match(/<meta property="og:image" content="([^"]+)"/);
+    if (match && match[1]) return match[1].replace(/&amp;/g, '&');
+  } catch (err) {
+    // Instagram іноді блокує автоматичні запити — просто пропускаємо цей рядок,
+    // старе значення (якщо було) лишається, спробуємо ще раз наступного разу.
+  }
+  return '';
+}
+
+/** Запусти ОДИН РАЗ вручну (вибери у списку функцій угорі редактора → Run),
+ *  щоб увімкнути автооновлення фото кожні 6 годин. */
+function createRefreshTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'refreshInstagramImages') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('refreshInstagramImages')
+    .timeBased()
+    .everyHours(6)
+    .create();
+}
+
+/** Додає меню "ODA Tools" у таблицю для ручного оновлення фото. */
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('ODA Tools')
+    .addItem('Оновити фото з Instagram зараз', 'refreshInstagramImages')
+    .addToUi();
 }

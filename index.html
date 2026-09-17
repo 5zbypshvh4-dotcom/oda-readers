@@ -322,8 +322,6 @@
   .modal input:focus-visible{ border-color:var(--city-accent); }
   .checkbox-row{ display:flex; align-items:flex-start; gap:9px; font-size:.86rem; color:var(--ink-soft); }
   .checkbox-row input{ margin-top:3px; }
-  .modal .gcal-link{ display:inline-flex; align-items:center; gap:6px; font-size:.88rem; color:var(--city-accent); font-weight:600; text-decoration:none; margin-bottom:4px; }
-  .modal .gcal-link:hover{ text-decoration:underline; }
   .thankyou{ text-align:center; padding:22px 0; }
   .thankyou h3{ font-family:var(--font-script); font-weight:600; font-size:2rem; color:var(--wine); margin-bottom:8px; }
 
@@ -417,7 +415,6 @@
     .modal .meta-row div{ font-size:1rem; }
     .modal input[type="text"], .modal input[type="email"]{ padding:15px 16px; font-size:1.05rem; }
     .checkbox-row{ font-size:.95rem; }
-    .modal .gcal-link{ font-size:1rem; }
   }
 </style>
 </head>
@@ -489,12 +486,9 @@
         </div>
         <div class="history-layout">
           <div class="prose">
-            <p>Мене звати Діана. Усе почалося в червні 2024 року, коли я переїхала до Бухареста — і все попереднє життя ніби лишилося десь позаду, в Україні. Я тоді зовсім перестала читати. Прокрастинація, апатія, відчуття порожнечі — коли ніби все є, а нічого не хочеться.</p>
-            <p>Мені дуже бракувало своїх — українок і українців, які живуть тут і так само люблять книжки. Місця, де можна говорити відкрито, безпечно, де тебе розуміють і де відчуваєш: ти не одна.</p>
-            <p>Усе почалося зі спільноти "Обмін книгами Бухарест" — я натрапила на неї випадково, побачила, як люди діляться, продають, віддають книжки, і подумала: оце мої люди. Тоді й з'явилася думка — а може, створити щось своє? Окремо хочу подякувати Марині — саме її телеграм-група надихнула та підтримала мене на самому початку. Без тебе цього всього не було б.</p>
-            <p>У жовтні 2025 року ми зібрались на першу зустріч — обговорювали книгу "Я бачу, вас цікавить пітьма" Ілларіона Павлюка, і в нас було обговорення, яке нікого не залишило байдужим. Тоді я навіть не уявляла, що це стане початком чогось такого теплого й рідного.</p>
-            <p>Спочатку нас було 30 — 30 амбасадорок і амбасадорів ODA Book Club Бухарест. Сьогодні — уже понад 180. Ми зустрічаємось більше півроку: читаємо, спілкуємось, дивуємо одне одного подарунками й думками. І щоразу я йду додому з відчуттям, що зустріла своїх людей. Бо це вже не просто книжковий клуб — це маленька родина, де завжди тепло.</p>
-            <p>А у жовтні 2026 року я переїжджаю до Клуж-Напоки — і саме так там народилася ще одна маленька спільнота ODA.</p>
+            <p>Мене звати Діана. Усе почалося в червні 2024 року, коли я переїхала до Бухареста і зрозуміла, як бракує своїх — українок і українців, які так само люблять книжки. У жовтні 2025-го ми зібрались на першу зустріч, а сьогодні нас уже понад 180.</p>
+            <p>У жовтні 2026 року я переїжджаю до Клуж-Напоки — і саме так там народилася ще одна маленька спільнота ODA.</p>
+            <a class="ig-link" href="https://www.instagram.com/p/DZXgYZcjfn9/" target="_blank" rel="noopener">Ознайомитися з історією створення клубу →</a>
           </div>
           <div class="history-photo"><img src="photos/history-cover.jpg" alt="ODA Readers Book Club"></div>
         </div>
@@ -506,9 +500,10 @@
           <div><h2>Концепція</h2></div>
         </div>
         <div class="prose">
-          <p>Щомісяця ми обираємо одну книгу — і зустрічаємось наживо, щоб поговорити про неї відкрито, без поспіху.</p>
+          <p>Наш читацький клуб — це не просто спільнота для обговорення книг, це частина підтримки одна одній. Ми обираємо книгу, щоб зануритись в історії персонажів, у їхнє життя та характери. Тому ми відкриті до будь-яких думок і коментарів.</p>
           <p class="pull">Не встигла дочитати? Все одно приходь — головне тут розмова, а не залік.</p>
-          <p>Між зустрічами спільнота лишається на звʼязку в теле-групах: ділимось книжками, ідеями та підтримкою одна для одної.</p>
+          <p>Усі деталі зустрічей, голосування за книги та інші обговорення проходять у наших телеграм-спільнотах — посилання знайдеш на відповідній сторінці клубу.</p>
+          <p>Ми обираємо все разом — це клуб для всіх, і кожна й кожен з вас важливі для того, якими ми стаємо як ком'юніті.</p>
         </div>
       </section>
 
@@ -518,8 +513,8 @@
           <div><h2>Місія</h2></div>
         </div>
         <div class="prose">
-          <p>Ми хотіли створити простір, де буде безпечно, затишно і водночас цікаво — місце, куди можна прийти навіть саму і вийти з відчуттям, що тебе почули.</p>
-          <p>Кожна людина, яка приходить на нашу зустріч, має піти звідти з енергією, новими ідеями для читання і неймовірною спільнотою поруч. Книжка — лише привід. Головне — люди, які збираються навколо неї.</p>
+          <p>ODA — це місце, де ти не почуваєшся одинокою чи одиноким. Тут ти відчуваєш себе частиною чогось більшого — спільноти, яка надихає, підтримує і робить нас сильнішими та затишнішими разом.</p>
+          <p>Книжка — лише привід. Головне — люди, які збираються навколо неї.</p>
         </div>
       </section>
     </div>
@@ -527,8 +522,8 @@
 
   <div class="night-band">
     <div class="gallery-head">
-      <h2>Наші затишні, теплі зустрічі</h2>
-      <p>Кадри з наших книжкових вечорів — клікни на фото, щоб роздивитись ближче.</p>
+      <h2>Ви робите наші читацькі клуби яскравішими. Дякую вам!</h2>
+      <p>Клікни на фото, щоб роздивитись ближче.</p>
     </div>
     <div class="filmstrip">
       <div class="filmstrip-track" id="filmstripTrack"></div>
@@ -569,27 +564,33 @@
 
 <script>
 (function(){
-  const TZ = 'Europe/Bucharest';
-
   /*
    * ==== ІНТЕГРАЦІЯ З GOOGLE ТАБЛИЦЕЮ ====
    * Щоб події та книги підтягувались із таблиці, а не з прикладів нижче:
-   * 1. У Google Sheets: File → Share → Publish to web → обрати аркуш (Events / Books) → CSV → скопіювати лінк.
-   * 2. Вставити цей лінк у EVENTS_CSV_URL / BOOKS_CSV_URL нижче.
+   * Кожен URL — це пряме посилання на CSV-експорт вкладки таблиці:
+   * https://docs.google.com/spreadsheets/d/ФАЙЛ_ID/export?format=csv&gid=ID_ВКЛАДКИ
+   * (ID_ВКЛАДКИ видно в адресному рядку браузера, коли відкрита потрібна вкладка: ...#gid=12345)
    * Очікувані колонки (див. вкладку "Інструкція" у файлі таблиці):
-   *   Events: city, status, title, date, time_start, time_end, location, description, image_url, calendar_event_id
-   *           status: "планується" / "закінчено" — рядки "закінчено" на сайт не потрапляють
-   *   Books:  city, status, month, title, author, cover_url
-   *           status: "заплановано" / "в процесі" / "закінчено" — "закінчено" на сайт не потрапляють
+   *   Events:  city, status, title, date, time_start, time_end, location, description,
+   *            price, image_url, image_resolved, calendar_event_id
+   *            status: "планується" / "закінчено" — рядки "закінчено" на сайт не потрапляють
+   *            image_url — посилання на пост в Instagram (apps-script.gs сам перетворює
+   *            його на пряме фото і пише в image_resolved; сайт бере image_resolved,
+   *            якщо воно є, інакше image_url напряму)
+   *   Books:   city, status, month, title, author, cover_url
+   *            status: "заплановано" / "в процесі" / "закінчено" — "закінчено" на сайт не потрапляють
+   *   Gallery: city, post_url, resolved_url — так само, post_url заповнюєш ти (лінк на
+   *            пост в Instagram), resolved_url заповнює скрипт автоматично
    *   (city пишеться "Бухарест" або "Клуж-Напока")
-   * Щоб форма запису реально писала імʼя/email у таблицю й додавала гостя у спільний
-   * Google Calendar-івент — потрібен Google Apps Script Web App (doPost), лінк якого
-   * вставляється в SIGNUP_ENDPOINT_URL.
-   * Поки всі три поля порожні — сайт працює на прикладах нижче (SEED_DATA).
+   * Щоб форма запису реально писала імʼя/email у таблицю, додавала гостя у спільний
+   * Google Calendar-івент і резолвила фото з Instagram — потрібен розгорнутий
+   * Google Apps Script Web App (apps-script.gs), лінк якого вставляється в SIGNUP_ENDPOINT_URL.
+   * Поки поля порожні — сайт працює на прикладах нижче (SEED_DATA / SEED_PHOTOS).
    */
   const CONFIG = {
     EVENTS_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=1783364436',
     BOOKS_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=843154318',
+    GALLERY_CSV_URL: '',
     SIGNUP_ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbxw1Qkqpvfgf0u25zhtP7V1_x8PpXf8QdRSyl7ocqGBfYdoWY6Hb2pXxONrbtf5CtxI/exec'
   };
 
@@ -604,6 +605,8 @@
         { id: 'buc-3', status: 'планується', title: 'Зустріч клубу: обговорення книги жовтня', start: '2026-10-25T18:00', end: '2026-10-25T20:00', location: 'Бухарест · кафе, адреса уточнюється', description: 'Щомісячна зустріч клубу ODA у Бухаресті.' }
       ],
       links: [
+        { title: 'Instagram спільноти', desc: 'Новини та анонси клубу в Бухаресті', url: 'https://www.instagram.com/oda.bookclub' },
+        { title: 'Telegram спільноти', desc: 'Головний чат клубу в Бухаресті', url: 'https://t.me/oda_bookclub' },
         { title: 'Oda Activities', desc: 'Група з активностями нашої спільноти', url: 'https://t.me/oda_activity' },
         { title: 'Книгообмін', desc: 'Група з обміну та купівлі книг', url: 'https://t.me/+v9RWI4b11AwzMTJi' },
         { title: 'Пропозиції та ідеї', desc: 'Документ з ідеями й форматами для покращення спільноти', url: 'https://docs.google.com/document/d/1zKEtO3FoSF_GnBFOAAp_TjQQITAZXqM6RLatjxQfCfU/edit?tab=t.0' },
@@ -699,7 +702,8 @@
             calendarEventId: r.calendar_event_id || '',
             title: r.title, start, end,
             location: r.location, description: r.description,
-            image: r.image_url || undefined
+            price: r.price || undefined,
+            image: r.image_resolved || r.image_url || undefined
           });
         });
         Object.keys(byCity).forEach(k => { CITY_DATA[k].events = byCity[k]; });
@@ -744,15 +748,6 @@
     const d = new Date(iso);
     return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
   }
-  function gcalUrl(ev){
-    const toStamp = s => s.replace(/[-:]/g,'') + '00';
-    const params = new URLSearchParams({
-      action: 'TEMPLATE', text: ev.title,
-      dates: toStamp(ev.start) + '/' + toStamp(ev.end),
-      details: ev.description || '', location: ev.location || '', ctz: TZ
-    });
-    return 'https://calendar.google.com/calendar/render?' + params.toString();
-  }
 
   const SOCIAL_ICONS = {
     instagram: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>',
@@ -795,6 +790,7 @@
             <div><span class="eyebrow">Дата</span><span class="val">${fmtDate(ev.start)}</span></div>
             <div><span class="eyebrow">Час</span><span class="val">${fmtTime(ev.start)}–${fmtTime(ev.end)}</span></div>
             <div><span class="eyebrow">Місце</span><span class="val">${escapeHtml(ev.location)}</span></div>
+            ${ev.price ? `<div><span class="eyebrow">Вхід</span><span class="val">${escapeHtml(ev.price)}</span></div>` : ''}
           </div>
           <div class="hero-actions">
             <button class="btn btn-primary" data-open-event="${escapeHtml(ev.id)}">Долучитися</button>
@@ -814,7 +810,7 @@
     }
     list.innerHTML = d.events.map(ev => `
       <button class="event-card" data-open-event="${escapeHtml(ev.id)}">
-        <span class="date-tag">${fmtDate(ev.start)} · ${fmtTime(ev.start)}</span>
+        <span class="date-tag">${fmtDate(ev.start)} · ${fmtTime(ev.start)}${ev.price ? ` · ${escapeHtml(ev.price)}` : ''}</span>
         <h3>${escapeHtml(ev.title)}</h3>
         <span class="loc">${escapeHtml(ev.location)}</span>
       </button>
@@ -871,37 +867,32 @@
    * сайту, а не підв'язані напряму до Instagram (посилання на фото в Instagram
    * протухають за кілька днів). Щоб додати ще — скинь фото чи лінк на пост.
    */
-  const REAL_PHOTOS = [
+  const SEED_PHOTOS = [
     { url: 'photos/meetup-park-1.jpg', caption: 'Бухарест' },
     { url: 'photos/meetup-park-2.jpg', caption: 'Бухарест' },
     { url: 'photos/meetup-venue.jpg', caption: 'Бухарест' }
   ];
+  let PHOTOS = SEED_PHOTOS.slice();
 
-  const GALLERY_TILES = [
-    { g: 'linear-gradient(160deg,#7C2438,#3F1119)', label: 'Бухарест' },
-    { g: 'linear-gradient(160deg,#8A72A0,#3F1119)', label: 'Клуж-Напока' },
-    { g: 'linear-gradient(160deg,#B9A4C9,#7C2438)', label: 'Бухарест' },
-    { g: 'linear-gradient(160deg,#3F1119,#241226)', label: 'Клуж-Напока' },
-    { g: 'linear-gradient(160deg,#9A3049,#8A72A0)', label: 'Бухарест' },
-    { g: 'linear-gradient(160deg,#D8C3A5,#7C2438)', label: 'Клуж-Напока' },
-    { g: 'linear-gradient(160deg,#8A72A0,#9A3049)', label: 'Бухарест' },
-    { g: 'linear-gradient(160deg,#3F1119,#7C2438)', label: 'Клуж-Напока' }
-  ];
+  async function loadGalleryFromSheet(){
+    if (!CONFIG.GALLERY_CSV_URL) return;
+    try {
+      const rows = await fetchCsvRows(CONFIG.GALLERY_CSV_URL);
+      const loaded = rows
+        .map(r => ({ url: r.resolved_url || '', caption: r.city || '' }))
+        .filter(p => p.url);
+      if (loaded.length) PHOTOS = loaded;
+    } catch (e){ console.warn('Gallery sheet unavailable, using demo photos', e); }
+  }
+
   function renderGallery(){
     const track = document.getElementById('filmstripTrack');
-    if (REAL_PHOTOS.length){
-      track.innerHTML = REAL_PHOTOS.concat(REAL_PHOTOS).map(p => `
-        <button type="button" class="photo-tile${p.caption ? ' has-caption' : ''}" data-lightbox-src="${p.url}">
-          <img src="${p.url}" alt="${p.caption || 'Фото з зустрічі ODA Readers'}" loading="lazy">
-          ${p.caption ? `<span>${p.caption}</span>` : ''}
-        </button>
-      `).join('');
-      return;
-    }
-    const tiles = GALLERY_TILES.concat(GALLERY_TILES).map(t => `
-      <div class="photo-tile" style="background:${t.g}"><span>${t.label}</span></div>
+    track.innerHTML = PHOTOS.concat(PHOTOS).map(p => `
+      <button type="button" class="photo-tile${p.caption ? ' has-caption' : ''}" data-lightbox-src="${escapeHtml(p.url)}">
+        <img src="${escapeHtml(p.url)}" alt="${escapeHtml(p.caption || 'Фото з зустрічі ODA Readers')}" loading="lazy">
+        ${p.caption ? `<span>${escapeHtml(p.caption)}</span>` : ''}
+      </button>
     `).join('');
-    track.innerHTML = tiles;
   }
 
   function applyCity(city){
@@ -945,14 +936,14 @@
         <div><span class="k">Дата</span>${fmtDate(ev.start)}</div>
         <div><span class="k">Час</span>${fmtTime(ev.start)}–${fmtTime(ev.end)}</div>
         <div><span class="k">Місце</span>${escapeHtml(ev.location)}</div>
+        ${ev.price ? `<div><span class="k">Вхід</span>${escapeHtml(ev.price)}</div>` : ''}
       </div>
-      <a class="gcal-link" href="${gcalUrl(ev)}" target="_blank" rel="noopener">+ Додати у свій Google Calendar</a>
       <form id="signupForm">
         <input type="text" name="name" placeholder="Ім'я" required id="f-name">
         <input type="email" name="email" placeholder="Email" required id="f-email">
         <label class="checkbox-row">
-          <input type="checkbox" name="future" checked>
-          Хочу отримувати анонси майбутніх подій
+          <input type="checkbox" name="addToCalendar" checked>
+          Додати у свій Google Calendar
         </label>
         <button type="submit" class="btn btn-primary">Записатися</button>
       </form>
@@ -961,8 +952,8 @@
       e.preventDefault();
       const name = document.getElementById('f-name').value.trim();
       const email = document.getElementById('f-email').value.trim();
-      const wantsFuture = document.querySelector('#signupForm [name="future"]').checked;
-      await submitSignup({ eventId: ev.id, eventTitle: ev.title, city, name, email, wantsFuture, ts: new Date().toISOString() });
+      const addToCalendar = document.querySelector('#signupForm [name="addToCalendar"]').checked;
+      await submitSignup({ eventId: ev.id, eventTitle: ev.title, city, name, email, addToCalendar, ts: new Date().toISOString() });
       modalBody.innerHTML = `
         <div class="thankyou">
           <h3>Дякуємо, ${escapeHtml(name)}!</h3>
@@ -1002,6 +993,7 @@
   applyCity(state.city);
 
   loadCityDataFromSheets().then(() => applyCity(state.city));
+  loadGalleryFromSheet().then(renderGallery);
 })();
 </script>
 </body>
