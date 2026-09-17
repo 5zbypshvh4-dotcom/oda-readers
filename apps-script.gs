@@ -46,6 +46,12 @@ function doPost(e) {
 
   // 2. Знаходимо подію в таблиці Events
   var values = eventsSheet.getDataRange().getValues();
+  // Google Sheets зберігає час ("13:00") як внутрішній Date-об'єкт, зіставлений
+  // з 30 грудня 1899-го — а для цієї історичної дати в багатьох часових поясах
+  // (зокрема Бухарест/Кишинів) діє старий "місцевий середній час" з дивним
+  // зсувом замість сучасного, тому .getHours() на такому об'єкті повертає
+  // сміття. Обходимо це, читаючи текст так, як він відображається в таблиці.
+  var displayValues = eventsSheet.getDataRange().getDisplayValues();
   var headers = values[0];
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
@@ -59,6 +65,7 @@ function doPost(e) {
   }
 
   var row = values[rowIndex];
+  var displayRow = displayValues[rowIndex];
   var calendar = CalendarApp.getDefaultCalendar();
   var calEvent = null;
   var existingId = row[col.calendar_event_id];
@@ -82,8 +89,8 @@ function doPost(e) {
   // 3. Якщо спільного івенту в календарі ще нема — створюємо один раз
   if (!calEvent) {
     var dateVal = row[col.date] instanceof Date ? row[col.date] : new Date(row[col.date]);
-    var start = combineDateTime(dateVal, row[col.time_start]);
-    var end = combineDateTime(dateVal, row[col.time_end]);
+    var start = combineDateTime(dateVal, displayRow[col.time_start]);
+    var end = combineDateTime(dateVal, displayRow[col.time_end]);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
       // Не валимо весь запис через биту дату/час — повертаємо, що саме
       // не так, замість непрозорого винятку від Calendar API.
@@ -92,8 +99,8 @@ function doPost(e) {
         error:'bad event date/time',
         debug:{
           date: String(row[col.date]), dateType: typeof row[col.date],
-          time_start: String(row[col.time_start]), tsType: typeof row[col.time_start],
-          time_end: String(row[col.time_end]), teType: typeof row[col.time_end],
+          time_start: displayRow[col.time_start],
+          time_end: displayRow[col.time_end],
           start: String(start), end: String(end)
         }
       });
@@ -120,17 +127,16 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function combineDateTime(dateVal, timeVal) {
+// timeStr — текст так, як він показаний у таблиці (напр. "13:00"), взятий
+// через getDisplayValues(). Навмисно НЕ читаємо це як Date-об'єкт: Google
+// Sheets зберігає час прив'язаним до 30 грудня 1899-го, а для цієї
+// історичної дати в часовому поясі Бухарест/Кишинів діє старий "місцевий
+// середній час" (+01:44:24) замість сучасного — тому .getHours() на такому
+// об'єкті повертає безглузді значення.
+function combineDateTime(dateVal, timeStr) {
   var d = new Date(dateVal.getTime());
-  // Google Sheets зберігає введений час ("13:00") як Date-об'єкт
-  // (внутрішньо — 30 грудня 1899 р.), а не текст — читаємо години/хвилини
-  // напряму в цьому випадку, інакше беремо це як текстовий рядок "HH:MM".
-  if (timeVal instanceof Date) {
-    d.setHours(timeVal.getHours(), timeVal.getMinutes(), 0, 0);
-  } else {
-    var parts = String(timeVal).split(':');
-    d.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
-  }
+  var parts = String(timeStr).split(':');
+  d.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
   return d;
 }
 
