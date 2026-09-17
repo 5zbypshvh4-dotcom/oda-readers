@@ -44,27 +44,26 @@ function doPost(e) {
   }
 
   // 2. Find the event in the Events sheet
-  var values = eventsSheet.getDataRange().getValues();
-  // Google Sheets stores a time value ("13:00") as an internal Date object anchored to
-  // Dec 30, 1899 - and for that historical date, many Eastern European timezones (including
-  // Bucharest/Chisinau) use an old Local Mean Time offset instead of the modern one, so
-  // .getHours() on that object returns garbage. We work around this by reading the text
-  // exactly as it's displayed in the sheet instead.
+  // Read display text only (one sheet call, not two): Google Sheets stores a time
+  // value ("13:00") as an internal Date object anchored to Dec 30, 1899 - and for
+  // that historical date, many Eastern European timezones (including
+  // Bucharest/Chisinau) use an old Local Mean Time offset instead of the modern
+  // one, so .getHours() on that object returns garbage. Reading the text exactly
+  // as it's displayed in the sheet sidesteps that entirely, for every column.
   var displayValues = eventsSheet.getDataRange().getDisplayValues();
-  var headers = values[0];
+  var headers = displayValues[0];
   var col = {};
   headers.forEach(function(h, i) { col[h] = i; });
 
   var rowIndex = -1;
-  for (var i = 1; i < values.length; i++) {
-    if (values[i][col.title] === data.eventTitle) { rowIndex = i; break; }
+  for (var i = 1; i < displayValues.length; i++) {
+    if (displayValues[i][col.title] === data.eventTitle) { rowIndex = i; break; }
   }
   if (rowIndex === -1) {
     return jsonResponse({ok:false, error:'event not found'});
   }
 
-  var row = values[rowIndex];
-  var displayRow = displayValues[rowIndex];
+  var row = displayValues[rowIndex];
   var calendar = CalendarApp.getDefaultCalendar();
   var calEvent = null;
   var existingId = row[col.calendar_event_id];
@@ -87,9 +86,9 @@ function doPost(e) {
 
   // 3. If the shared event doesn't exist in the calendar yet - create it once
   if (!calEvent) {
-    var dateVal = row[col.date] instanceof Date ? row[col.date] : new Date(row[col.date]);
-    var start = combineDateTime(dateVal, displayRow[col.time_start]);
-    var end = combineDateTime(dateVal, displayRow[col.time_end]);
+    var dateVal = new Date(row[col.date]);
+    var start = combineDateTime(dateVal, row[col.time_start]);
+    var end = combineDateTime(dateVal, row[col.time_end]);
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
       // Don't blow up the whole request over a bad date/time - report what's
       // wrong instead of an opaque exception from the Calendar API.
@@ -98,8 +97,8 @@ function doPost(e) {
         error:'bad event date/time',
         debug:{
           date: String(row[col.date]), dateType: typeof row[col.date],
-          time_start: displayRow[col.time_start],
-          time_end: displayRow[col.time_end],
+          time_start: row[col.time_start],
+          time_end: row[col.time_end],
           start: String(start), end: String(end)
         }
       });

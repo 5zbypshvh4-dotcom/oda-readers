@@ -970,6 +970,7 @@
       const submitBtn = e.target.querySelector('button[type="submit"]');
       if (submitBtn.disabled) return;
       submitBtn.disabled = true;
+      submitBtn.textContent = 'Записуємо…';
       const name = document.getElementById('f-name').value.trim();
       const email = document.getElementById('f-email').value.trim();
       const addToCalendar = document.querySelector('#signupForm [name="addToCalendar"]').checked;
