@@ -726,12 +726,12 @@
   async function submitSignup(payload){
     if (!CONFIG.SIGNUP_ENDPOINT_URL) return { ok: true, demo: true };
     try {
-      await fetch(CONFIG.SIGNUP_ENDPOINT_URL, {
-        method: 'POST', mode: 'no-cors',
+      const res = await fetch(CONFIG.SIGNUP_ENDPOINT_URL, {
+        method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-      return { ok: true };
+      return await res.json();
     } catch (e){ return { ok: false, error: e }; }
   }
 
@@ -972,8 +972,13 @@
       const name = document.getElementById('f-name').value.trim();
       const email = document.getElementById('f-email').value.trim();
       const addToCalendar = document.querySelector('#signupForm [name="addToCalendar"]').checked;
-      await submitSignup({ eventId: ev.id, eventTitle: ev.title, city, name, email, addToCalendar, ts: new Date().toISOString() });
-      const calLink = addToCalendar ? `<a class="btn btn-outline" href="${escapeHtml(gcalAddLink(ev))}" target="_blank" rel="noopener">Перейти в календар →</a>` : '';
+      const result = await submitSignup({ eventId: ev.id, eventTitle: ev.title, city, name, email, addToCalendar, ts: new Date().toISOString() });
+      let calLink = '';
+      if (addToCalendar){
+        calLink = result && result.calendarRsvpUrl
+          ? `<a class="btn btn-outline" href="${escapeHtml(result.calendarRsvpUrl)}" target="_blank" rel="noopener">Підтвердити участь у календарі →</a>`
+          : `<a class="btn btn-outline" href="${escapeHtml(gcalAddLink(ev))}" target="_blank" rel="noopener">Перейти в календар →</a>`;
+      }
       modalBody.innerHTML = `
         <div class="thankyou">
           <h3>До зустрічі, ${escapeHtml(name)}!</h3>

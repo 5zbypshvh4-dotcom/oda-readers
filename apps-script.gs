@@ -37,8 +37,7 @@ function doPost(e) {
   ]);
 
   if (!data.addToCalendar) {
-    return ContentService.createTextOutput(JSON.stringify({ok:true}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ok:true});
   }
 
   // 2. Знаходимо подію в таблиці Events
@@ -52,8 +51,7 @@ function doPost(e) {
     if (values[i][col.title] === data.eventTitle) { rowIndex = i; break; }
   }
   if (rowIndex === -1) {
-    return ContentService.createTextOutput(JSON.stringify({ok:false, error:'event not found'}))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({ok:false, error:'event not found'});
   }
 
   var row = values[rowIndex];
@@ -80,7 +78,15 @@ function doPost(e) {
   // 4. Додаємо людину гостем у той самий спільний івент
   calEvent.addGuest(data.email);
 
-  return ContentService.createTextOutput(JSON.stringify({ok:true}))
+  // 5. Пряме посилання "підтвердити участь" — те саме, що кнопка "Так" у
+  //    email-запрошенні, але без походу в пошту (rst=1 = одразу "Так").
+  var rsvpUrl = buildRsvpUrl(calEvent, calendar);
+
+  return jsonResponse({ok:true, calendarRsvpUrl: rsvpUrl});
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -89,6 +95,12 @@ function combineDateTime(dateVal, timeStr) {
   var parts = String(timeStr).split(':');
   d.setHours(parseInt(parts[0], 10), parseInt(parts[1] || '0', 10), 0, 0);
   return d;
+}
+
+function buildRsvpUrl(calEvent, calendar) {
+  var rawId = calEvent.getId().split('@')[0];
+  var eid = Utilities.base64EncodeWebSafe(rawId + ' ' + calendar.getId()).replace(/=+$/, '');
+  return 'https://calendar.google.com/calendar/event?action=RESPOND&eid=' + eid + '&rst=1';
 }
 
 /**
