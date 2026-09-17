@@ -590,7 +590,7 @@
   const CONFIG = {
     EVENTS_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=1783364436',
     BOOKS_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=843154318',
-    GALLERY_CSV_URL: '',
+    GALLERY_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=2052610635',
     SIGNUP_ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbxw1Qkqpvfgf0u25zhtP7V1_x8PpXf8QdRSyl7ocqGBfYdoWY6Hb2pXxONrbtf5CtxI/exec'
   };
 
@@ -702,7 +702,7 @@
             calendarEventId: r.calendar_event_id || '',
             title: r.title, start, end,
             location: r.location, description: r.description,
-            price: r.price || undefined,
+            price: r.price || r.Price || undefined,
             image: r.image_resolved || r.image_url || undefined
           });
         });
