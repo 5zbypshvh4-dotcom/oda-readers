@@ -217,7 +217,12 @@
     display:flex; align-items:flex-end; padding:10px 8px;
     color:var(--cream); box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
   }
-  .spine-tile span{ font-family:var(--font-heading); font-size:.7rem; letter-spacing:.05em; text-transform:uppercase; }
+  .spine-tile img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .spine-tile.has-cover::before{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(to top, rgba(20,8,14,.7), transparent 55%);
+  }
+  .spine-tile span{ position:relative; z-index:1; font-family:var(--font-heading); font-size:.7rem; letter-spacing:.05em; text-transform:uppercase; }
   .books-list{ display:flex; flex-direction:column; }
   .books-list li{ list-style:none; display:flex; gap:16px; padding:14px 0; border-bottom:1px solid rgba(124,36,56,.12); align-items:baseline; }
   .books-list .m{ font-family:var(--font-heading); font-size:.82rem; color:var(--city-accent); min-width:9ch; }
@@ -241,6 +246,13 @@
     padding-left:22px; margin:26px 0; max-width:600px; line-height:1.3;
   }
 
+  /* ---------- HISTORY (text + photo) ---------- */
+  .history-layout{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+  @media (max-width:860px){ .history-layout{ grid-template-columns:1fr; gap:28px; } }
+  .history-photo{ border-radius:16px; overflow:hidden; aspect-ratio:4/5; box-shadow:0 24px 48px -24px rgba(63,17,25,.4); }
+  .history-photo img{ width:100%; height:100%; object-fit:cover; }
+  .history-layout .prose{ max-width:560px; }
+
   /* ---------- GALLERY + FOOTER (night band) ---------- */
   .night-band{ position:relative; overflow:hidden; background:linear-gradient(165deg,var(--night-1),var(--night-2) 70%); color:var(--cream-deep); margin-top:0; }
   .night-band::after{
@@ -262,7 +274,9 @@
   .photo-tile{
     width:230px; height:290px; border-radius:10px; flex:none; position:relative;
     display:flex; align-items:flex-end; padding:14px; overflow:hidden;
+    cursor:pointer; border:none; text-align:left; transition:transform .25s; font:inherit;
   }
+  .photo-tile:hover{ transform:scale(1.03); }
   .photo-tile img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .photo-tile.has-caption::before{
     content:""; position:absolute; inset:0;
@@ -312,6 +326,19 @@
   .modal .gcal-link:hover{ text-decoration:underline; }
   .thankyou{ text-align:center; padding:22px 0; }
   .thankyou h3{ font-family:var(--font-script); font-weight:600; font-size:2rem; color:var(--wine); margin-bottom:8px; }
+
+  /* ---------- LIGHTBOX ---------- */
+  .lightbox-overlay{
+    position:fixed; inset:0; background:rgba(10,4,7,.88);
+    display:flex; align-items:center; justify-content:center; padding:24px; z-index:110;
+  }
+  .lightbox-overlay[hidden]{ display:none; }
+  .lightbox-overlay img{ max-width:min(90vw,720px); max-height:86vh; width:auto; border-radius:12px; object-fit:contain; }
+  .lightbox-close{
+    position:absolute; top:20px; right:20px; width:40px; height:40px; border-radius:50%;
+    border:1px solid rgba(247,241,231,.3); background:rgba(255,255,255,.08); color:var(--cream);
+    font-size:1.1rem; line-height:1;
+  }
 
   /* ---------- MOBILE: a deliberately larger system, not a shrunk desktop ---------- */
   @media (max-width:700px){
@@ -372,6 +399,7 @@
     .prose p{ font-size:1.1rem; }
     .pull{ font-size:1.75rem; padding-left:18px; }
     .ig-link{ font-size:1.05rem; }
+    .history-layout{ gap:22px; }
 
     .gallery-head{ padding-top:48px; }
     .gallery-head h2{ font-size:2rem; }
@@ -426,7 +454,7 @@
           <span class="chapter-num">01</span>
           <div>
             <h2>Найближчі зустрічі</h2>
-            <p>Обери місто вгорі — і побачиш, що у нас заплановано саме там.</p>
+            <p>Будемо раді бачити тебе на наших зустрічах — саме так і народжуються спільні спогади.</p>
           </div>
         </div>
         <div class="events-grid" id="eventsList"></div>
@@ -459,10 +487,16 @@
           <span class="chapter-num">04</span>
           <div><h2>Наша маленька історія</h2></div>
         </div>
-        <div class="prose">
-          <p>Усе почалося з кількох українок за кордоном, яким бракувало теплих розмов про книжки рідною мовою. Одна невелика зустріч у Бухаресті — і виявилось, що така потреба є не тільки в нас.</p>
-          <p>Так народилась ODA — простір, де читання стає приводом побачитись, підтримати одна одну і трохи видихнути. Сьогодні у спільноти вже дві "філії" — в Бухаресті та Клуж-Напоці, — а дух лишається той самий: тепло, щирість і книжки, які хочеться обговорювати наживо, а не тільки в чатах.</p>
-          <a class="ig-link" href="https://www.instagram.com/p/DZXgYZcjfn9/" target="_blank" rel="noopener">Дивитись наш пост в Instagram →</a>
+        <div class="history-layout">
+          <div class="prose">
+            <p>Мене звати Діана. Усе почалося в червні 2024 року, коли я переїхала до Бухареста — і все попереднє життя ніби лишилося десь позаду, в Україні. Я тоді зовсім перестала читати. Прокрастинація, апатія, відчуття порожнечі — коли ніби все є, а нічого не хочеться.</p>
+            <p>Мені дуже бракувало своїх — українок і українців, які живуть тут і так само люблять книжки. Місця, де можна говорити відкрито, безпечно, де тебе розуміють і де відчуваєш: ти не одна.</p>
+            <p>Усе почалося зі спільноти "Обмін книгами Бухарест" — я натрапила на неї випадково, побачила, як люди діляться, продають, віддають книжки, і подумала: оце мої люди. Тоді й з'явилася думка — а може, створити щось своє? Окремо хочу подякувати Марині — саме її телеграм-група надихнула та підтримала мене на самому початку. Без тебе цього всього не було б.</p>
+            <p>У жовтні 2025 року ми зібрались на першу зустріч — обговорювали книгу "Я бачу, вас цікавить пітьма" Ілларіона Павлюка, і в нас було обговорення, яке нікого не залишило байдужим. Тоді я навіть не уявляла, що це стане початком чогось такого теплого й рідного.</p>
+            <p>Спочатку нас було 30 — 30 амбасадорок і амбасадорів ODA Book Club Бухарест. Сьогодні — уже понад 180. Ми зустрічаємось більше півроку: читаємо, спілкуємось, дивуємо одне одного подарунками й думками. І щоразу я йду додому з відчуттям, що зустріла своїх людей. Бо це вже не просто книжковий клуб — це маленька родина, де завжди тепло.</p>
+            <p>А у жовтні 2026 року я переїжджаю до Клуж-Напоки — і саме так там народилася ще одна маленька спільнота ODA.</p>
+          </div>
+          <div class="history-photo"><img src="photos/history-cover.jpg" alt="ODA Readers Book Club"></div>
         </div>
       </section>
 
@@ -472,7 +506,7 @@
           <div><h2>Концепція</h2></div>
         </div>
         <div class="prose">
-          <p>Щомісяця ми обираємо одну книгу — роман, есеїстику чи нонфікшн — і зустрічаємось наживо, щоб обговорити її за чаєм чи келихом вина.</p>
+          <p>Щомісяця ми обираємо одну книгу — і зустрічаємось наживо, щоб поговорити про неї відкрито, без поспіху.</p>
           <p class="pull">Не встигла дочитати? Все одно приходь — головне тут розмова, а не залік.</p>
           <p>Між зустрічами спільнота лишається на звʼязку в теле-групах: ділимось книжками, ідеями та підтримкою одна для одної.</p>
         </div>
@@ -484,8 +518,8 @@
           <div><h2>Місія</h2></div>
         </div>
         <div class="prose">
-          <p>Коли ми починали ODA, нам хотілося створити простір, де буде безпечно, затишно і водночас цікаво — місце, куди можна прийти навіть саму і вийти з відчуттям, що тебе почули.</p>
-          <p>Ми віримо, що кожна людина, яка приходить на нашу зустріч, має піти звідти з енергією, новими ідеями для читання і неймовірною спільнотою поруч. Книжка — лише привід. Головне — люди, які збираються навколо неї.</p>
+          <p>Ми хотіли створити простір, де буде безпечно, затишно і водночас цікаво — місце, куди можна прийти навіть саму і вийти з відчуттям, що тебе почули.</p>
+          <p>Кожна людина, яка приходить на нашу зустріч, має піти звідти з енергією, новими ідеями для читання і неймовірною спільнотою поруч. Книжка — лише привід. Головне — люди, які збираються навколо неї.</p>
         </div>
       </section>
     </div>
@@ -493,8 +527,8 @@
 
   <div class="night-band">
     <div class="gallery-head">
-      <h2>Миті з наших зустрічей</h2>
-      <p>Кадри з наших книжкових вечорів — ще додамо більше з часом.</p>
+      <h2>Наші затишні, теплі зустрічі</h2>
+      <p>Кадри з наших книжкових вечорів — клікни на фото, щоб роздивитись ближче.</p>
     </div>
     <div class="filmstrip">
       <div class="filmstrip-track" id="filmstripTrack"></div>
@@ -514,7 +548,7 @@
         </div>
         <div class="footer-col">
           <div class="eyebrow">ODA Readers Book Club</div>
-          <p class="footer-credit">Спільнота українських читачок за кордоном.</p>
+          <p class="footer-credit">Спільнота українців та українок за кордоном, обʼєднаних книжками.</p>
         </div>
       </div>
     </footer>
@@ -528,6 +562,11 @@
   </div>
 </div>
 
+<div class="lightbox-overlay" id="lightboxOverlay" hidden>
+  <button class="lightbox-close" id="lightboxClose" aria-label="Закрити">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 <script>
 (function(){
   const TZ = 'Europe/Bucharest';
@@ -535,14 +574,17 @@
   /*
    * ==== ІНТЕГРАЦІЯ З GOOGLE ТАБЛИЦЕЮ ====
    * Щоб події та книги підтягувались із таблиці, а не з прикладів нижче:
-   * 1. У Google Sheets: File → Share → Publish to web → обрати аркуш → CSV → скопіювати лінк.
+   * 1. У Google Sheets: File → Share → Publish to web → обрати аркуш (Events / Books) → CSV → скопіювати лінк.
    * 2. Вставити цей лінк у EVENTS_CSV_URL / BOOKS_CSV_URL нижче.
-   * Очікувані колонки:
-   *   Events: city, id, title, start, end, location, description
-   *   Books:  city, month, title, note
+   * Очікувані колонки (див. вкладку "Інструкція" у файлі таблиці):
+   *   Events: city, status, title, date, time_start, time_end, location, description, image_url, calendar_event_id
+   *           status: "планується" / "закінчено" — рядки "закінчено" на сайт не потрапляють
+   *   Books:  city, status, month, title, author, cover_url
+   *           status: "заплановано" / "в процесі" / "закінчено" — "закінчено" на сайт не потрапляють
    *   (city пишеться "Бухарест" або "Клуж-Напока")
-   * Щоб форма запису реально писала імʼя/email у таблицю — потрібен
-   * Google Apps Script Web App (doPost), лінк якого вставляється в SIGNUP_ENDPOINT_URL.
+   * Щоб форма запису реально писала імʼя/email у таблицю й додавала гостя у спільний
+   * Google Calendar-івент — потрібен Google Apps Script Web App (doPost), лінк якого
+   * вставляється в SIGNUP_ENDPOINT_URL.
    * Поки всі три поля порожні — сайт працює на прикладах нижче (SEED_DATA).
    */
   const CONFIG = {
@@ -557,9 +599,9 @@
       telegram: 'https://t.me/oda_bookclub',
       instagram: 'https://www.instagram.com/oda.bookclub',
       events: [
-        { id: 'buc-1', title: 'Зустріч клубу: обговорення книги вересня', start: '2026-09-27T18:00', end: '2026-09-27T20:00', location: 'Бухарест · кафе, адреса уточнюється', description: 'Щомісячна зустріч клубу ODA у Бухаресті — обговорюємо книгу вересня за чаєм.', image: 'photos/banner-placeholder.svg' },
-        { id: 'buc-2', title: 'Книжковий пікнік у парку Herăstrău', start: '2026-10-11T17:00', end: '2026-10-11T19:30', location: 'Бухарест · парк Herăstrău', description: 'Неформальна зустріч на свіжому повітрі — книги, плед і гарна компанія.' },
-        { id: 'buc-3', title: 'Зустріч клубу: обговорення книги жовтня', start: '2026-10-25T18:00', end: '2026-10-25T20:00', location: 'Бухарест · кафе, адреса уточнюється', description: 'Щомісячна зустріч клубу ODA у Бухаресті.' }
+        { id: 'buc-1', status: 'планується', title: 'Зустріч клубу: обговорення книги вересня', start: '2026-09-27T18:00', end: '2026-09-27T20:00', location: 'Бухарест · кафе, адреса уточнюється', description: 'Щомісячна зустріч клубу ODA у Бухаресті — обговорюємо книгу вересня за чаєм.', image: 'photos/banner-placeholder.svg' },
+        { id: 'buc-2', status: 'планується', title: 'Книжковий пікнік у парку Herăstrău', start: '2026-10-11T17:00', end: '2026-10-11T19:30', location: 'Бухарест · парк Herăstrău', description: 'Неформальна зустріч на свіжому повітрі — книги, плед і гарна компанія.' },
+        { id: 'buc-3', status: 'планується', title: 'Зустріч клубу: обговорення книги жовтня', start: '2026-10-25T18:00', end: '2026-10-25T20:00', location: 'Бухарест · кафе, адреса уточнюється', description: 'Щомісячна зустріч клубу ODA у Бухаресті.' }
       ],
       links: [
         { title: 'Oda Activities', desc: 'Група з активностями нашої спільноти', url: 'https://t.me/oda_activity' },
@@ -568,14 +610,14 @@
         { title: 'Трекер активностей', desc: 'Разом трекаємо біг, спорт і взаємну підтримку', url: 'https://t.me/+cCs4r9TKvLxmNTQy' }
       ],
       books: [
-        { month: 'Вересень', title: 'Вбити пересмішника', note: 'Гарпер Лі' },
-        { month: 'Жовтень', title: 'Дракула', note: 'Брем Стокер' },
-        { month: 'Листопад', title: 'За порогом з зими', note: '' },
-        { month: 'Грудень', title: 'Клуб убивств по четвергах', note: 'Річард Осман' },
-        { month: 'Січень', title: 'Маленькі жінки', note: 'Луїза Мей Олкотт' },
-        { month: 'Лютий', title: 'Освічена', note: 'Тара Вестовер' },
-        { month: 'Березень', title: 'Уточнюється', note: '' },
-        { month: 'Квітень', title: 'Бог завжди подорожує інкогніто', note: 'Лоран Гунель' }
+        { status: 'в процесі', month: 'Вересень', title: 'Вбити пересмішника', note: 'Гарпер Лі' },
+        { status: 'заплановано', month: 'Жовтень', title: 'Дракула', note: 'Брем Стокер' },
+        { status: 'заплановано', month: 'Листопад', title: 'За порогом з зими', note: '' },
+        { status: 'заплановано', month: 'Грудень', title: 'Клуб убивств по четвергах', note: 'Річард Осман' },
+        { status: 'заплановано', month: 'Січень', title: 'Маленькі жінки', note: 'Луїза Мей Олкотт' },
+        { status: 'заплановано', month: 'Лютий', title: 'Освічена', note: 'Тара Вестовер' },
+        { status: 'заплановано', month: 'Березень', title: 'Уточнюється', note: '' },
+        { status: 'заплановано', month: 'Квітень', title: 'Бог завжди подорожує інкогніто', note: 'Лоран Гунель' }
       ]
     },
     cluj: {
@@ -583,8 +625,8 @@
       telegram: 'https://t.me/oda_bookclub_cl',
       instagram: 'https://www.instagram.com/oda.bookclub.cl',
       events: [
-        { id: 'cluj-1', title: 'Перша зустріч осіннього сезону', start: '2026-09-20T18:00', end: '2026-09-20T20:00', location: 'Клуж-Напока · місце уточнюється', description: 'Знайомимось і плануємо перші книги сезону разом.', image: 'photos/banner-placeholder.svg' },
-        { id: 'cluj-2', title: 'Книжковий вечір: знайомство учасниць', start: '2026-10-04T18:00', end: '2026-10-04T20:00', location: 'Клуж-Напока · місце уточнюється', description: 'Другий вечір спільноти в Клуж-Напоці.' }
+        { id: 'cluj-1', status: 'планується', title: 'Перша зустріч осіннього сезону', start: '2026-09-20T18:00', end: '2026-09-20T20:00', location: 'Клуж-Напока · місце уточнюється', description: 'Знайомимось і плануємо перші книги сезону разом.', image: 'photos/banner-placeholder.svg' },
+        { id: 'cluj-2', status: 'планується', title: 'Книжковий вечір: знайомство учасниць', start: '2026-10-04T18:00', end: '2026-10-04T20:00', location: 'Клуж-Напока · місце уточнюється', description: 'Другий вечір спільноти в Клуж-Напоці.' }
       ],
       links: [
         { title: 'Instagram спільноти', desc: 'Новини та анонси клубу в Клуж-Напоці', url: 'https://www.instagram.com/oda.bookclub.cl' },
@@ -599,6 +641,10 @@
   function normalizeCity(raw){
     const s = (raw || '').toLowerCase();
     return s.includes('клуж') || s.includes('cluj') ? 'cluj' : 'bucharest';
+  }
+
+  function isFinished(status){
+    return (status || '').trim().toLowerCase() === 'закінчено';
   }
 
   function parseCsv(text){
@@ -637,10 +683,17 @@
       try {
         const rows = await fetchCsvRows(CONFIG.EVENTS_CSV_URL);
         const byCity = { bucharest: [], cluj: [] };
-        rows.forEach(r => byCity[normalizeCity(r.city)].push({
-          id: r.id, title: r.title, start: r.start, end: r.end,
-          location: r.location, description: r.description
-        }));
+        rows.forEach(r => {
+          if (isFinished(r.status)) return;
+          const start = r.date && r.time_start ? `${r.date}T${r.time_start}` : r.date;
+          const end = r.date && r.time_end ? `${r.date}T${r.time_end}` : r.date;
+          byCity[normalizeCity(r.city)].push({
+            id: r.calendar_event_id || (r.title + r.date),
+            title: r.title, start, end,
+            location: r.location, description: r.description,
+            image: r.image_url || undefined
+          });
+        });
         Object.keys(byCity).forEach(k => { CITY_DATA[k].events = byCity[k]; });
       } catch (e){ console.warn('Events sheet unavailable, using demo data', e); }
     }
@@ -648,7 +701,10 @@
       try {
         const rows = await fetchCsvRows(CONFIG.BOOKS_CSV_URL);
         const byCity = { bucharest: [], cluj: [] };
-        rows.forEach(r => byCity[normalizeCity(r.city)].push({ month: r.month, title: r.title, note: r.note }));
+        rows.forEach(r => {
+          if (isFinished(r.status)) return;
+          byCity[normalizeCity(r.city)].push({ month: r.month, title: r.title, note: r.author, cover: r.cover_url || undefined });
+        });
         Object.keys(byCity).forEach(k => { CITY_DATA[k].books = byCity[k]; });
       } catch (e){ console.warn('Books sheet unavailable, using demo data', e); }
     }
@@ -721,6 +777,7 @@
     }
     heroEl.classList.toggle('has-image', !!ev.image);
     const banner = ev.image ? `<div class="hero-banner"><img src="${ev.image}" alt=""></div>` : '';
+    const moreLink = d.events.length > 1 ? `<a class="btn btn-ghost" href="#events">Усі події →</a>` : '';
     document.getElementById('heroContent').innerHTML = `
       <div class="hero-flex">
         <div class="hero-text">
@@ -733,7 +790,7 @@
           </div>
           <div class="hero-actions">
             <button class="btn btn-primary" data-open-event="${ev.id}">Долучитися</button>
-            <a class="btn btn-ghost" href="#events">Усі події →</a>
+            ${moreLink}
           </div>
         </div>
         ${banner}
@@ -785,7 +842,8 @@
       return;
     }
     const shelf = d.books.map((b,i) => `
-      <div class="spine-tile" style="background:${SPINE_COLORS[i % SPINE_COLORS.length]}">
+      <div class="spine-tile${b.cover ? ' has-cover' : ''}" style="${b.cover ? '' : `background:${SPINE_COLORS[i % SPINE_COLORS.length]}`}">
+        ${b.cover ? `<img src="${b.cover}" alt="${b.title}">` : ''}
         <span>${b.month}</span>
       </div>`).join('');
     const rows = d.books.map(b => `
@@ -801,10 +859,9 @@
   }
 
   /*
-   * Реальні фото з Instagram спільноти (@oda.bookclub). Щоб додати ще —
-   * скинь мені фото або лінк на пост, і я довантажу їх сюди ж (same-origin
-   * файли артефакту — це надійніше за пряме посилання на Instagram, яке
-   * блокується політикою безпеки артефактів Claude).
+   * Реальні фото з Instagram спільноти (@oda.bookclub) — завантажені у файли
+   * сайту, а не підв'язані напряму до Instagram (посилання на фото в Instagram
+   * протухають за кілька днів). Щоб додати ще — скинь фото чи лінк на пост.
    */
   const REAL_PHOTOS = [
     { url: 'photos/meetup-park-1.jpg', caption: 'Бухарест' },
@@ -826,10 +883,10 @@
     const track = document.getElementById('filmstripTrack');
     if (REAL_PHOTOS.length){
       track.innerHTML = REAL_PHOTOS.concat(REAL_PHOTOS).map(p => `
-        <div class="photo-tile${p.caption ? ' has-caption' : ''}">
+        <button type="button" class="photo-tile${p.caption ? ' has-caption' : ''}" data-lightbox-src="${p.url}">
           <img src="${p.url}" alt="${p.caption || 'Фото з зустрічі ODA Readers'}" loading="lazy">
           ${p.caption ? `<span>${p.caption}</span>` : ''}
-        </div>
+        </button>
       `).join('');
       return;
     }
@@ -913,7 +970,25 @@
   });
   document.getElementById('modalClose').addEventListener('click', () => overlay.hidden = true);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.hidden = true; });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') overlay.hidden = true; });
+
+  /* ---- lightbox ---- */
+  const lightbox = document.getElementById('lightboxOverlay');
+  const lightboxImg = document.getElementById('lightboxImg');
+  document.addEventListener('click', e => {
+    const trigger = e.target.closest('[data-lightbox-src]');
+    if (!trigger) return;
+    lightboxImg.src = trigger.dataset.lightboxSrc;
+    lightboxImg.alt = trigger.querySelector('img')?.alt || '';
+    lightbox.hidden = false;
+  });
+  document.getElementById('lightboxClose').addEventListener('click', () => lightbox.hidden = true);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) lightbox.hidden = true; });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    overlay.hidden = true;
+    lightbox.hidden = true;
+  });
 
   renderGallery();
   applyCity(state.city);
