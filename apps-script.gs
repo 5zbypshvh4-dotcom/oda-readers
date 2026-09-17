@@ -84,6 +84,20 @@ function doPost(e) {
     var dateVal = row[col.date] instanceof Date ? row[col.date] : new Date(row[col.date]);
     var start = combineDateTime(dateVal, row[col.time_start]);
     var end = combineDateTime(dateVal, row[col.time_end]);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+      // Не валимо весь запис через биту дату/час — повертаємо, що саме
+      // не так, замість непрозорого винятку від Calendar API.
+      return jsonResponse({
+        ok:false,
+        error:'bad event date/time',
+        debug:{
+          date: String(row[col.date]), dateType: typeof row[col.date],
+          time_start: String(row[col.time_start]), tsType: typeof row[col.time_start],
+          time_end: String(row[col.time_end]), teType: typeof row[col.time_end],
+          start: String(start), end: String(end)
+        }
+      });
+    }
     calEvent = calendar.createEvent(row[col.title], start, end, {
       location: row[col.location],
       description: row[col.description]
