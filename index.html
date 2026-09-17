@@ -72,9 +72,8 @@
     max-width:1160px; margin:0 auto; padding:14px clamp(20px,5vw,56px);
     display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
   }
-  .wordmark{ display:flex; align-items:baseline; gap:2px; }
-  .wordmark .wm-oda{ font-family:var(--font-script); font-weight:600; font-size:1.9rem; color:var(--wine); margin-right:2px; }
-  .wordmark .wm-readers{ font-family:var(--font-display); font-size:1.25rem; color:var(--wine-deep); letter-spacing:.01em; }
+  .wordmark{ display:flex; align-items:center; }
+  .logo-img{ height:44px; width:auto; display:block; }
 
   .city-switch{
     display:inline-flex; background:var(--cream-deep); border:1px solid rgba(124,36,56,.15); border-radius:999px; padding:3px;
@@ -343,9 +342,9 @@
   @media (max-width:700px){
     body{ font-size:18px; line-height:1.65; }
 
-    .nav-inner{ padding-block:14px; gap:14px; }
-    .wordmark .wm-oda{ font-size:2.3rem; }
-    .wordmark .wm-readers{ font-size:1.55rem; }
+    .nav{ position:static; }
+    .nav-inner{ flex-direction:column; justify-content:center; padding-block:18px; gap:14px; }
+    .logo-img{ height:56px; }
     .city-switch button{ padding:13px 20px; font-size:1.05rem; }
     .icon-link{ width:46px; height:46px; }
     .icon-link svg{ width:20px; height:20px; }
@@ -425,8 +424,7 @@
   <header class="nav">
     <div class="nav-inner">
       <div class="wordmark">
-        <span class="wm-oda">Oda</span>
-        <span class="wm-readers">Readers</span>
+        <img class="logo-img" src="assets/logo.png" alt="Oda Readers Book Club">
       </div>
       <div class="city-switch" role="group" aria-label="Обрати місто">
         <button type="button" data-city-btn="bucharest" aria-pressed="true">Бухарест</button>
