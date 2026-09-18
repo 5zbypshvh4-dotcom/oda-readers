@@ -4,6 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ODA Readers</title>
+<!-- Warms up the connection to the Apps Script endpoint before the fetch actually
+     fires, shaving off DNS/TLS setup time from the redirect chain it goes through. -->
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script>
+  // Fires the data request immediately, before the rest of this (long) page
+  // even gets parsed, so the slow round trip to Google runs in parallel with
+  // page load instead of only starting once the whole body is read. The main
+  // script below reuses this promise instead of starting a second request.
+  // Keep this URL in sync with CONFIG.SIGNUP_ENDPOINT_URL further down.
+  window.__odaEarlyFetch = fetch('https://script.google.com/macros/s/AKfycbx2JtwuVOqlicuDUFk_8qchJqDvVItRTEVMN_FvrdnGpln0STnMPUTAAVEEIekSLx2Z/exec', { cache: 'no-store' })
+    .then(function(res){ if (!res.ok) throw new Error('data fetch failed: ' + res.status); return res.json(); });
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Forum&family=Jost:wght@300;400;500;600;700&family=Yeseva+One&display=swap');
 
@@ -666,7 +679,7 @@
   function loadSheetData(){
     if (!CONFIG.SIGNUP_ENDPOINT_URL) return Promise.resolve(null);
     if (!sheetDataPromise){
-      sheetDataPromise = fetch(CONFIG.SIGNUP_ENDPOINT_URL, { cache: 'no-store' })
+      sheetDataPromise = window.__odaEarlyFetch || fetch(CONFIG.SIGNUP_ENDPOINT_URL, { cache: 'no-store' })
         .then(res => { if (!res.ok) throw new Error('data fetch failed: ' + res.status); return res.json(); });
     }
     return sheetDataPromise;
