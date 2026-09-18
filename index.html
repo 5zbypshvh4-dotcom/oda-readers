@@ -590,9 +590,10 @@
    * Поки поля порожні — сайт працює на прикладах нижче (SEED_DATA / SEED_PHOTOS).
    */
   const CONFIG = {
-    EVENTS_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=1783364436',
-    BOOKS_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=843154318',
-    GALLERY_CSV_URL: 'https://docs.google.com/spreadsheets/d/1-mBPBMcTe4BbuhW_3myJL888kCUNp6WUsC3xbQJzBE0/export?format=csv&gid=2052610635',
+    // One URL now serves both the public data feed (GET -> doGet) and signups
+    // (POST -> doPost). The site no longer reads the Google Sheet directly -
+    // this keeps working even with the Sheet's sharing set to Restricted,
+    // since the script itself reads it under your own authorization.
     SIGNUP_ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbx2JtwuVOqlicuDUFk_8qchJqDvVItRTEVMN_FvrdnGpln0STnMPUTAAVEEIekSLx2Z/exec'
   };
 
@@ -658,69 +659,49 @@
     ));
   }
 
-  function parseCsv(text){
-    const rows = [];
-    let row = [], field = '', inQuotes = false;
-    for (let i = 0; i < text.length; i++){
-      const c = text[i];
-      if (inQuotes){
-        if (c === '"'){
-          if (text[i+1] === '"'){ field += '"'; i++; } else inQuotes = false;
-        } else field += c;
-      } else if (c === '"'){ inQuotes = true; }
-      else if (c === ','){ row.push(field); field = ''; }
-      else if (c === '\n' || c === '\r'){
-        if (c === '\r' && text[i+1] === '\n') i++;
-        row.push(field); field = ''; rows.push(row); row = [];
-      } else field += c;
+  // Fetches the Events/Books/Gallery data (via doGet in apps-script.gs) once and
+  // shares the same in-flight request across callers, instead of each of the two
+  // loaders below firing its own request - one round trip instead of up to three.
+  let sheetDataPromise = null;
+  function loadSheetData(){
+    if (!CONFIG.SIGNUP_ENDPOINT_URL) return Promise.resolve(null);
+    if (!sheetDataPromise){
+      sheetDataPromise = fetch(CONFIG.SIGNUP_ENDPOINT_URL, { cache: 'no-store' })
+        .then(res => { if (!res.ok) throw new Error('data fetch failed: ' + res.status); return res.json(); });
     }
-    if (field.length || row.length){ row.push(field); rows.push(row); }
-    const header = (rows.shift() || []).map(h => h.trim());
-    return rows.filter(r => r.length > 1 || r[0]).map(r => {
-      const obj = {};
-      header.forEach((h, idx) => obj[h] = (r[idx] || '').trim());
-      return obj;
-    });
-  }
-
-  async function fetchCsvRows(url){
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('sheet fetch failed: ' + res.status);
-    return parseCsv(await res.text());
+    return sheetDataPromise;
   }
 
   async function loadCityDataFromSheets(){
-    if (CONFIG.EVENTS_CSV_URL){
-      try {
-        const rows = await fetchCsvRows(CONFIG.EVENTS_CSV_URL);
-        const byCity = { bucharest: [], cluj: [] };
-        rows.forEach((r, idx) => {
-          if (isFinished(r.status)) return;
-          const start = r.date && r.time_start ? `${r.date}T${r.time_start}` : r.date;
-          const end = r.date && r.time_end ? `${r.date}T${r.time_end}` : r.date;
-          const cityKey = normalizeCity(r.city);
-          byCity[cityKey].push({
-            id: `sheet-${cityKey}-${idx}`,
-            calendarEventId: r.calendar_event_id || '',
-            title: r.title, start, end,
-            location: r.location, description: r.description,
-            price: r.price || r.Price || undefined,
-            image: r.image_resolved || r.image_url || undefined
-          });
+    let data;
+    try { data = await loadSheetData(); }
+    catch (e){ console.warn('Sheet data unavailable, using demo data', e); return; }
+    if (!data) return;
+    if (data.events){
+      const byCity = { bucharest: [], cluj: [] };
+      data.events.forEach((r, idx) => {
+        if (isFinished(r.status)) return;
+        const start = r.date && r.time_start ? `${r.date}T${r.time_start}` : r.date;
+        const end = r.date && r.time_end ? `${r.date}T${r.time_end}` : r.date;
+        const cityKey = normalizeCity(r.city);
+        byCity[cityKey].push({
+          id: `sheet-${cityKey}-${idx}`,
+          calendarEventId: r.calendar_event_id || '',
+          title: r.title, start, end,
+          location: r.location, description: r.description,
+          price: r.price || r.Price || undefined,
+          image: r.image_resolved || r.image_url || undefined
         });
-        Object.keys(byCity).forEach(k => { CITY_DATA[k].events = byCity[k]; });
-      } catch (e){ console.warn('Events sheet unavailable, using demo data', e); }
+      });
+      Object.keys(byCity).forEach(k => { CITY_DATA[k].events = byCity[k]; });
     }
-    if (CONFIG.BOOKS_CSV_URL){
-      try {
-        const rows = await fetchCsvRows(CONFIG.BOOKS_CSV_URL);
-        const byCity = { bucharest: [], cluj: [] };
-        rows.forEach(r => {
-          if (isFinished(r.status)) return;
-          byCity[normalizeCity(r.city)].push({ month: r.month, title: r.title, note: r.author, cover: r.cover_url || undefined });
-        });
-        Object.keys(byCity).forEach(k => { CITY_DATA[k].books = byCity[k]; });
-      } catch (e){ console.warn('Books sheet unavailable, using demo data', e); }
+    if (data.books){
+      const byCity = { bucharest: [], cluj: [] };
+      data.books.forEach(r => {
+        if (isFinished(r.status)) return;
+        byCity[normalizeCity(r.city)].push({ month: r.month, title: r.title, note: r.author, cover: r.cover_url || undefined });
+      });
+      Object.keys(byCity).forEach(k => { CITY_DATA[k].books = byCity[k]; });
     }
   }
 
@@ -894,14 +875,14 @@
   let PHOTOS = SEED_PHOTOS.slice();
 
   async function loadGalleryFromSheet(){
-    if (!CONFIG.GALLERY_CSV_URL) return;
-    try {
-      const rows = await fetchCsvRows(CONFIG.GALLERY_CSV_URL);
-      const loaded = rows
-        .map(r => ({ url: r.resolved_url || '', caption: r.city || '' }))
-        .filter(p => p.url);
-      if (loaded.length) PHOTOS = loaded;
-    } catch (e){ console.warn('Gallery sheet unavailable, using demo photos', e); }
+    let data;
+    try { data = await loadSheetData(); }
+    catch (e){ console.warn('Gallery data unavailable, using demo photos', e); return; }
+    if (!data || !data.gallery) return;
+    const loaded = data.gallery
+      .map(r => ({ url: r.resolved_url || '', caption: r.city || '' }))
+      .filter(p => p.url);
+    if (loaded.length) PHOTOS = loaded;
   }
 
   function renderGallery(){

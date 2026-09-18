@@ -2,10 +2,13 @@
  * ODA Readers - Apps Script for the Google Sheet.
  *
  * What it does:
- * 1. Accepts signups from the site (name, email, event) and appends a row to the Signups tab.
- * 2. If the person checked "Add to my Google Calendar" - creates one shared Google Calendar
+ * 1. Serves the public Events/Books/Gallery data to the site as JSON (doGet) - this is the
+ *    ONLY thing the site reads from the Sheet directly, which is what lets the Sheet itself
+ *    be fully private (Share -> Restricted). The Signups tab is never exposed this way.
+ * 2. Accepts signups from the site (name, email, event) and appends a row to the Signups tab.
+ * 3. If the person checked "Add to my Google Calendar" - creates one shared Google Calendar
  *    event per event (once) and adds them as a guest to that same event.
- * 3. Every few hours (on a timer) automatically resolves Instagram post links (Events and
+ * 4. Every few hours (on a timer) automatically resolves Instagram post links (Events and
  *    Gallery tabs) into direct photo URLs, so the event banner and photo gallery on the site
  *    can show real pictures without manual uploads.
  *
@@ -19,13 +22,59 @@
  * 5. Deploy -> New deployment -> type "Web app".
  *    Execute as: Me. Who has access: Anyone.
  * 6. Deploy -> allow access to Calendar and Sheets with your account.
- * 7. Copy the Web app URL and paste it into CONFIG.SIGNUP_ENDPOINT_URL in the site's index.html.
+ * 7. Copy the Web app URL and paste it into CONFIG.SIGNUP_ENDPOINT_URL in the site's index.html
+ *    (this single URL now serves both the public data feed and signups).
  * 8. Run the createRefreshTrigger function once manually (pick it from the function dropdown
  *    at the top of the Apps Script editor and click Run) - this turns on automatic photo
  *    refreshing from Instagram every 6 hours. Grant access if asked.
  * 9. Reload the page with your spreadsheet - an "ODA Tools" menu will appear at the top,
  *    where you can trigger a photo refresh manually at any time.
+ * 10. Once you've confirmed the site loads correctly through this script, go to the Sheet's
+ *     Share button and change access from "Anyone with the link" to "Restricted" - the site
+ *     keeps working (this script reads it under your own authorization), but the raw Sheet
+ *     (including the Signups tab, with names and emails) is no longer public.
  */
+
+/**
+ * Serves the public Events/Books/Gallery data as one JSON payload, so the
+ * site never needs direct access to the underlying Google Sheet - only this
+ * script needs it (it runs as you, under the deployment's own authorization,
+ * regardless of the sheet's sharing setting). This is what lets the Sheet
+ * itself be fully private: only these three tabs are exposed, and only the
+ * columns present in them - the Signups tab is never touched here.
+ * Cached for 5 minutes (CacheService) so repeat visits don't re-read the
+ * Sheet every time, which also makes the site's initial load faster.
+ */
+function doGet(e) {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('publicData');
+  if (cached) {
+    return jsonResponse(JSON.parse(cached));
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var data = {
+    events: sheetToObjects(ss.getSheetByName('Events')),
+    books: sheetToObjects(ss.getSheetByName('Books')),
+    gallery: sheetToObjects(ss.getSheetByName('Gallery'))
+  };
+  cache.put('publicData', JSON.stringify(data), 300);
+  return jsonResponse(data);
+}
+
+function sheetToObjects(sheet) {
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getDisplayValues();
+  var headers = values[0];
+  var rows = [];
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (!row.some(function(v) { return String(v).trim(); })) continue;
+    var obj = {};
+    headers.forEach(function(h, idx) { obj[h] = String(row[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
 
 function doPost(e) {
   var data = JSON.parse(e.postData.contents);
