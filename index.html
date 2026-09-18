@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ODA Readers</title>
+<!-- Microsoft Clarity: analytics/heatmaps/session recordings. -->
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "yk8dg402hy");
+</script>
 <!-- Warms up the connection to the Apps Script endpoint before the fetch actually
      fires, shaving off DNS/TLS setup time from the redirect chain it goes through. -->
 <link rel="preconnect" href="https://script.google.com">
@@ -965,8 +973,8 @@
         ${ev.price ? `<div><span class="k">Вхід</span>${escapeHtml(ev.price)}</div>` : ''}
       </div>
       <form id="signupForm">
-        <input type="text" name="name" placeholder="Ім'я" required id="f-name">
-        <input type="email" name="email" placeholder="Email" required id="f-email">
+        <input type="text" name="name" placeholder="Ім'я" required id="f-name" data-clarity-mask="true">
+        <input type="email" name="email" placeholder="Email" required id="f-email" data-clarity-mask="true">
         <label class="checkbox-row">
           <input type="checkbox" name="addToCalendar" checked>
           Додати у свій Google Calendar
