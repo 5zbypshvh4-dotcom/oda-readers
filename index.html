@@ -685,11 +685,11 @@
     return sheetDataPromise;
   }
 
-  async function loadCityDataFromSheets(){
-    let data;
-    try { data = await loadSheetData(); }
-    catch (e){ console.warn('Sheet data unavailable, using demo data', e); return; }
-    if (!data) return;
+  // Applies a doGet JSON payload (Events/Books) to CITY_DATA. Shared between the
+  // network fetch and the instant-paint localStorage cache below, so a returning
+  // visitor sees last-known-real data immediately instead of the SEED_DATA
+  // placeholder while the fresh fetch is still in flight.
+  function applyEventsAndBooks(data){
     if (data.events){
       const byCity = { bucharest: [], cluj: [] };
       data.events.forEach((r, idx) => {
@@ -716,6 +716,15 @@
       });
       Object.keys(byCity).forEach(k => { CITY_DATA[k].books = byCity[k]; });
     }
+  }
+
+  async function loadCityDataFromSheets(){
+    let data;
+    try { data = await loadSheetData(); }
+    catch (e){ console.warn('Sheet data unavailable, using demo data', e); return; }
+    if (!data) return;
+    applyEventsAndBooks(data);
+    try { localStorage.setItem('oda-sheet-cache', JSON.stringify(data)); } catch (e){}
   }
 
   async function submitSignup(payload){
@@ -887,15 +896,19 @@
   ];
   let PHOTOS = SEED_PHOTOS.slice();
 
-  async function loadGalleryFromSheet(){
-    let data;
-    try { data = await loadSheetData(); }
-    catch (e){ console.warn('Gallery data unavailable, using demo photos', e); return; }
+  function applyGallery(data){
     if (!data || !data.gallery) return;
     const loaded = data.gallery
       .map(r => ({ url: r.resolved_url || '', caption: r.city || '' }))
       .filter(p => p.url);
     if (loaded.length) PHOTOS = loaded;
+  }
+
+  async function loadGalleryFromSheet(){
+    let data;
+    try { data = await loadSheetData(); }
+    catch (e){ console.warn('Gallery data unavailable, using demo photos', e); return; }
+    applyGallery(data);
   }
 
   function renderGallery(){
@@ -1012,6 +1025,14 @@
     overlay.hidden = true;
     lightbox.hidden = true;
   });
+
+  // Paint last-known-real data immediately from localStorage (instant for a
+  // returning visitor) instead of the SEED_DATA placeholder, while the fresh
+  // fetch below still runs in the background and repaints once it lands.
+  try {
+    const cached = JSON.parse(localStorage.getItem('oda-sheet-cache') || 'null');
+    if (cached){ applyEventsAndBooks(cached); applyGallery(cached); }
+  } catch (e) {}
 
   renderGallery();
   applyCity(state.city);
