@@ -106,7 +106,11 @@ function doPost(e) {
 
   var rowIndex = -1;
   for (var i = 1; i < displayValues.length; i++) {
-    if (displayValues[i][col.title] === data.eventTitle) { rowIndex = i; break; }
+    // Trim both sides: doGet trims every value before it reaches the site, so
+    // the title the site sends back is always clean - but a stray leading/
+    // trailing space typed into the sheet's own title cell would otherwise
+    // never match here, silently failing to find the event.
+    if (String(displayValues[i][col.title]).trim() === String(data.eventTitle).trim()) { rowIndex = i; break; }
   }
   if (rowIndex === -1) {
     return jsonResponse({ok:false, error:'event not found'});
