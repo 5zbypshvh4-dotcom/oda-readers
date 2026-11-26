@@ -19,7 +19,7 @@
     --border:#2b333b; --accent:#2cc39b; --accent-ink:#06261d; --accent-soft:#123b30;
     --warn:#f0a35e; --warn-soft:#3a2613; --danger:#f97066;
     --sel:#2cc39b; --busy:#3a434c; --heat-0:#20262d; --heat-rgb:44,195,155;
-    --shadow:none;
+    --shadow:none; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -27,7 +27,7 @@
   --border:#2b333b; --accent:#2cc39b; --accent-ink:#06261d; --accent-soft:#123b30;
   --warn:#f0a35e; --warn-soft:#3a2613; --danger:#f97066;
   --sel:#2cc39b; --busy:#3a434c; --heat-0:#20262d; --heat-rgb:44,195,155;
-  --shadow:none;
+  --shadow:none; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -156,7 +156,14 @@ const plural = (n, one, few, many) => { const a = n % 10, b = n % 100; return n 
 function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 function rng(seed) { return () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2200); }
-async function copyText(text) { try { await navigator.clipboard.writeText(text); toast('Скопійовано'); } catch { prompt('Скопіюйте вручну:', text); } }
+async function copyText(text, input) { try { await navigator.clipboard.writeText(text); toast('Скопійовано'); } catch { if (input) { input.focus(); input.select(); } toast('Виділено: скопіюйте вручну'); } }
+/** Двоетапне підтвердження прямо на кнопці (без confirm()). Повертає true з другого натискання. */
+function armed(btn, label) {
+  if (btn.dataset.armed) return true;
+  btn.dataset.armed = '1'; btn.dataset.orig = btn.textContent; btn.textContent = label;
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; } }, 4000);
+  return false;
+}
 const safeLS = {
   get(k) { try { return localStorage.getItem(k); } catch { return safeLS.mem[k] ?? null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { safeLS.mem[k] = v; } },
@@ -570,7 +577,7 @@ async function viewParticipant(id) {
   $('#save').addEventListener('click', async () => {
     const name = $('#nm').value.trim();
     if (!name) { $('#nm').focus(); toast("Вкажіть своє ім'я"); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-    if (!state.selected.size && !confirm('Ви не вибрали жодного слоту. Це означає, що вам не підходить жоден час. Зберегти?')) return;
+    if (!state.selected.size && !armed($('#save'), 'Жодного слоту. Зберегти все одно?')) return;
     try {
       const { id: rid } = await Store.saveResponse(id, { id: meId, name, cells: [...state.selected], source: state.source });
       safeLS.set('cp_me_' + id, rid);
@@ -652,10 +659,10 @@ async function viewAdmin(id, token, isNew) {
   renderGrid($('#grid'), poll, { mode: 'heat', responses, highlight: poll.final ? { date: poll.final.date, start: poll.final.start, end: poll.final.start + poll.duration } : slots[0] });
   if (!closed && !poll.final) startTicker(poll.deadline, () => route());
 
-  $('#cpP')?.addEventListener('click', () => copyText(pLink));
-  $('#cpA')?.addEventListener('click', () => copyText(aLink));
+  $('#cpP')?.addEventListener('click', () => copyText(pLink, $('#cpP').previousElementSibling));
+  $('#cpA')?.addEventListener('click', () => copyText(aLink, $('#cpA').previousElementSibling));
   $('#closeNow')?.addEventListener('click', async () => {
-    if (!confirm('Завершити збір відповідей зараз?')) return;
+    if (!armed($('#closeNow'), 'Точно завершити? Натисніть ще раз')) return;
     await Store.adminAction(id, token, 'close'); route();
   });
   $('#unfinal')?.addEventListener('click', async () => { await Store.adminAction(id, token, 'finalize', { final: null }); route(); });
