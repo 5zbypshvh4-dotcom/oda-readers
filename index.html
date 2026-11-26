@@ -43,6 +43,9 @@
     --blue:#C7D7E6;           /* Whispy Blue */
     --blue-mid:#AFC5DA;
     --blue-soft:#E2EBF3;
+    --pink:#F2D4DA;           /* soft pink, a tint of the bordeaux */
+    --pink-mid:#E6BCC6;
+    --pink-soft:#F9E9EC;
     --ink:#2B1512;
     --ink-soft:#6E5650;
     --night-1:#2C0712;
@@ -63,22 +66,24 @@
     --city-fill:linear-gradient(135deg,var(--wine),var(--wine-deep)); --city-fill-ink:var(--cream);
     --hero-btn-bg:var(--cream); --hero-btn-ink:var(--wine);
     --page:var(--cream); --paper:#F8EFE3; --surface:#E8D5BB;
+    --glow:rgba(199,215,230,.45);
   }
   [data-city="cluj"]{
-    --city-accent:var(--wine); --city-accent-2:var(--wine-deep); --city-soft:var(--blue-soft);
-    --city-night:var(--blue); --city-pop:var(--wine);
-    --hero-bg:linear-gradient(150deg, var(--blue-mid) 0%, var(--blue) 55%, var(--blue-soft) 130%);
+    --city-accent:var(--wine); --city-accent-2:var(--wine-deep); --city-soft:var(--pink-soft);
+    --city-night:var(--pink); --city-pop:var(--wine);
+    --hero-bg:linear-gradient(150deg, var(--pink-mid) 0%, var(--pink) 55%, var(--pink-soft) 130%);
     --hero-ink:var(--wine); --hero-ink-soft:rgba(98,17,38,.72);
-    --city-fill:linear-gradient(135deg,var(--blue),var(--blue-mid)); --city-fill-ink:var(--wine);
+    --city-fill:linear-gradient(135deg,var(--pink),var(--pink-mid)); --city-fill-ink:var(--wine);
     --hero-btn-bg:var(--wine); --hero-btn-ink:var(--cream);
-    --page:#EEF2F6; --paper:#F9FBFD; --surface:#DCE5EE;
+    --page:#FAF1F2; --paper:#FFFAFB; --surface:#F1DDE2;
+    --glow:rgba(230,188,198,.4);
   }
 
   *{ box-sizing:border-box; }
   body{
     margin:0;
     background:
-      radial-gradient(1100px 620px at 92% -8%, rgba(199,215,230,.45), transparent 60%),
+      radial-gradient(1100px 620px at 92% -8%, var(--glow), transparent 60%),
       radial-gradient(900px 520px at -8% 18%, rgba(98,17,38,.12), transparent 55%),
       var(--page);
     color:var(--ink);
@@ -127,7 +132,7 @@
     background:linear-gradient(120deg,var(--wine),var(--wine-deep)); color:var(--cream);
   }
   .city-switch button[data-city-btn="cluj"][aria-pressed="true"]{
-    background:var(--blue); color:var(--wine);
+    background:var(--pink); color:var(--wine);
   }
 
   .nav-social{ display:flex; gap:10px; }
