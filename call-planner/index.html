@@ -136,6 +136,13 @@ footer{margin-top:24px;text-align:center;font-size:12px;color:var(--muted)}
 const STEP = 30;                 // крок сітки, хв
 const TZ = 'Europe/Kyiv';        // часовий пояс дзвінків (прототип: один для всіх)
 
+/* ▼▼▼ НАЛАШТУВАННЯ ▼▼▼
+ * Встав сюди URL веб-додатка Google Apps Script (закінчується на /exec),
+ * див. інструкцію на початку файлу call-planner/apps-script.gs.
+ * Порожньо: сторінка спробує локальний server.js, а якщо його немає, працює в демо-режимі. */
+const API_URL = '';
+/* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
+
 /* ---------------- утиліти ---------------- */
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -157,6 +164,13 @@ function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt
 function rng(seed) { return () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2200); }
 async function copyText(text, input) { try { await navigator.clipboard.writeText(text); toast('Скопійовано'); } catch { if (input) { input.focus(); input.select(); } toast('Виділено: скопіюйте вручну'); } }
+/** Блокує кнопку на час дії й показує помилку, якщо щось пішло не так. */
+async function busy(btn, fn) {
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '…';
+  try { await fn(); } catch (ex) { toast(ex.message); }
+  finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = orig; } }
+}
 /** Двоетапне підтвердження прямо на кнопці (без confirm()). Повертає true з другого натискання. */
 function armed(btn, label) {
   if (btn.dataset.armed) return true;
@@ -234,6 +248,7 @@ function fakeBusy(poll, name) {
 const Store = {
   mode: 'local',
   async init() {
+    if (API_URL) { this.mode = 'gas'; return; }
     try {
       const r = await fetch('api/health', { cache: 'no-store' });
       if (r.ok && (await r.json()).ok) { this.mode = 'api'; return; }
@@ -248,7 +263,18 @@ const Store = {
     if (!r.ok) throw new Error(j.error || 'Помилка сервера');
     return j;
   },
+  /** Google Apps Script: усе через POST text/plain (без CORS-preflight), помилки в полі error. */
+  async _gas(action, payload = {}) {
+    let r;
+    try {
+      r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, ...payload }) });
+    } catch { throw new Error("Немає зв'язку з сервером. Перевірте інтернет і спробуйте ще раз."); }
+    const j = await r.json().catch(() => ({ error: 'Сервер повернув неочікувану відповідь. Перевірте API_URL і доступ «Усі» в розгортанні Apps Script.' }));
+    if (j.error) throw new Error(j.error);
+    return j;
+  },
   async createPoll(data) {
+    if (this.mode === 'gas') return this._gas('create', data);
     if (this.mode === 'api') return this._api('POST', 'api/polls', data);
     const db = this._db();
     const poll = { ...data, id: uid(8), adminToken: uid(16), createdAt: Date.now(), closedAt: null, final: null, responses: [] };
@@ -256,6 +282,7 @@ const Store = {
     return { id: poll.id, adminToken: poll.adminToken };
   },
   async getPoll(id) {
+    if (this.mode === 'gas') return this._gas('get', { id });
     if (this.mode === 'api') return this._api('GET', 'api/polls/' + encodeURIComponent(id));
     const p = this._db().polls[id];
     if (!p) throw new Error('Дзвінок не знайдено');
@@ -263,6 +290,7 @@ const Store = {
     return { poll, responses };
   },
   async saveResponse(id, resp) {
+    if (this.mode === 'gas') return this._gas('respond', { id, responseId: resp.id, name: resp.name, cells: resp.cells, source: resp.source });
     if (this.mode === 'api') return this._api('POST', `api/polls/${encodeURIComponent(id)}/responses`, resp);
     const db = this._db(), p = db.polls[id];
     if (!p) throw new Error('Дзвінок не знайдено');
@@ -275,6 +303,7 @@ const Store = {
     return { id: r.id };
   },
   async adminAction(id, token, action, payload = {}) {
+    if (this.mode === 'gas') return this._gas(action, { id, adminToken: token, ...payload });
     if (this.mode === 'api') return this._api('POST', `api/polls/${encodeURIComponent(id)}/${action}`, { adminToken: token, ...payload });
     const db = this._db(), p = db.polls[id];
     if (!p || p.adminToken !== token) throw new Error('Немає доступу');
@@ -284,6 +313,7 @@ const Store = {
     return { ok: true };
   },
   async checkAdmin(id, token) {
+    if (this.mode === 'gas') return (await this._gas('check', { id, adminToken: token })).ok;
     if (this.mode === 'api') return (await this._api('POST', `api/polls/${encodeURIComponent(id)}/check`, { adminToken: token })).ok;
     const p = this._db().polls[id];
     return !!p && p.adminToken === token;
@@ -435,11 +465,13 @@ function viewCreate() {
     };
     const err = validatePoll(data);
     if (err) { $('#err').textContent = err; return; }
+    const btn = $('#f button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Створюємо…'; $('#err').textContent = '';
     try {
       const { id, adminToken } = await Store.createPoll(data);
       safeLS.set('cp_admin_' + id, adminToken);
       location.hash = `#/a/${id}/${adminToken}?new=1`;
-    } catch (ex) { $('#err').textContent = ex.message; }
+    } catch (ex) { $('#err').textContent = ex.message; btn.disabled = false; btn.textContent = 'Створити й отримати посилання'; }
   });
 }
 function hourOpts(sel, shift = 0) { let s = ''; for (let h = 0 + shift; h <= 23 + shift; h++) s += `<option value="${h}"${h === sel ? ' selected' : ''}>${pad(h)}:00</option>`; return s; }
@@ -578,12 +610,14 @@ async function viewParticipant(id) {
     const name = $('#nm').value.trim();
     if (!name) { $('#nm').focus(); toast("Вкажіть своє ім'я"); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     if (!state.selected.size && !armed($('#save'), 'Жодного слоту. Зберегти все одно?')) return;
+    const btn = $('#save');
+    btn.disabled = true; btn.textContent = 'Зберігаємо…';
     try {
       const { id: rid } = await Store.saveResponse(id, { id: meId, name, cells: [...state.selected], source: state.source });
       safeLS.set('cp_me_' + id, rid);
       toast('Дякуємо! Відповідь збережено');
       route();
-    } catch (ex) { toast(ex.message); }
+    } catch (ex) { toast(ex.message); btn.disabled = false; btn.textContent = me ? 'Оновити відповідь' : 'Готово'; }
   });
 }
 
@@ -661,20 +695,22 @@ async function viewAdmin(id, token, isNew) {
 
   $('#cpP')?.addEventListener('click', () => copyText(pLink, $('#cpP').previousElementSibling));
   $('#cpA')?.addEventListener('click', () => copyText(aLink, $('#cpA').previousElementSibling));
-  $('#closeNow')?.addEventListener('click', async () => {
-    if (!armed($('#closeNow'), 'Точно завершити? Натисніть ще раз')) return;
-    await Store.adminAction(id, token, 'close'); route();
+  $('#closeNow')?.addEventListener('click', e => {
+    if (!armed(e.currentTarget, 'Точно завершити? Натисніть ще раз')) return;
+    busy(e.currentTarget, async () => { await Store.adminAction(id, token, 'close'); route(); });
   });
-  $('#unfinal')?.addEventListener('click', async () => { await Store.adminAction(id, token, 'finalize', { final: null }); route(); });
-  app.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', async () => {
+  $('#unfinal')?.addEventListener('click', e => busy(e.currentTarget, async () => { await Store.adminAction(id, token, 'finalize', { final: null }); route(); }));
+  app.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
     const s = slots[+b.dataset.pick];
     const link = ($('#meet')?.value || '').trim();
     if (link && !/^https?:\/\//i.test(link)) { toast('Посилання має починатися з https://'); return; }
-    await Store.adminAction(id, token, 'finalize', { final: { date: s.date, start: s.start, link } });
-    toast('Час обрано!');
-    route();
+    busy(b, async () => {
+      await Store.adminAction(id, token, 'finalize', { final: { date: s.date, start: s.start, link } });
+      toast('Час обрано!');
+      route();
+    });
   }));
-  $('#demo')?.addEventListener('click', async () => {
+  $('#demo')?.addEventListener('click', e => busy(e.currentTarget, async () => {
     const pool = ['Олена', 'Андрій', 'Марта', 'Ігор', 'Світлана', 'Богдан', 'Наталія', 'Тарас'];
     const taken = new Set(responses.map(r => norm(r.name)));
     const names = [...missing, ...pool].filter((n, i, a) => !taken.has(norm(n)) && a.findIndex(x => norm(x) === norm(n)) === i).slice(0, 4);
@@ -686,7 +722,7 @@ async function viewAdmin(id, token, isNew) {
     }
     toast('Додано тестових учасників: ' + names.length);
     route();
-  });
+  }));
   if (isNew) history.replaceState(null, '', `#/a/${id}/${token}`);
 }
 
@@ -696,12 +732,16 @@ async function route() {
   const h = location.hash.replace(/^#\/?/, '');
   const [path, query] = h.split('?');
   const parts = path.split('/').filter(Boolean);
+  if (parts.length && !app.querySelector('.card')) app.innerHTML = '<div class="card muted">Завантаження…</div>';
+  app.style.opacity = parts.length ? '.55' : '';
   try {
     if (parts[0] === 'p' && parts[1]) await viewParticipant(parts[1]);
     else if (parts[0] === 'a' && parts[1] && parts[2]) await viewAdmin(parts[1], parts[2], /(^|&)new=1/.test(query || ''));
     else viewCreate();
   } catch (ex) {
     app.innerHTML = `<div class="card"><h1>Упс</h1><p class="muted">${esc(ex.message)}</p><a class="btn" href="#/">Створити новий дзвінок</a></div>`;
+  } finally {
+    app.style.opacity = '';
   }
 }
 
