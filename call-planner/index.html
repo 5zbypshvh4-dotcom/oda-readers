@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Спільний час</title>
+<meta name="description" content="Простий спосіб знайти час для спільного дзвінка: кожен відмічає зручні слоти, організатор обирає найкращий.">
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f4; --text:#15191e; --muted:#5d6670;
+  --border:#dde2e7; --accent:#0f8a6c; --accent-ink:#ffffff; --accent-soft:#d6f1e8;
+  --warn:#b4570b; --warn-soft:#fdeedd; --danger:#b42318;
+  --sel:#14a37f; --busy:#c9cfd6; --heat-0:#eef1f4; --heat-rgb:20,163,127;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 2px 8px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1215; --surface:#171b20; --surface-2:#20262d; --text:#e8ecf0; --muted:#9aa4ae;
+    --border:#2b333b; --accent:#2cc39b; --accent-ink:#06261d; --accent-soft:#123b30;
+    --warn:#f0a35e; --warn-soft:#3a2613; --danger:#f97066;
+    --sel:#2cc39b; --busy:#3a434c; --heat-0:#20262d; --heat-rgb:44,195,155;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1215; --surface:#171b20; --surface-2:#20262d; --text:#e8ecf0; --muted:#9aa4ae;
+  --border:#2b333b; --accent:#2cc39b; --accent-ink:#06261d; --accent-soft:#123b30;
+  --warn:#f0a35e; --warn-soft:#3a2613; --danger:#f97066;
+  --sel:#2cc39b; --busy:#3a434c; --heat-0:#20262d; --heat-rgb:44,195,155;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 64px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;color:var(--text);text-decoration:none}
+.brand .dot{width:28px;height:28px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font-size:15px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+h1{font-size:22px;line-height:1.25;margin:0 0 6px}
+h2{font-size:16px;margin:0 0 10px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+label{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
+.field{margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.field{flex:1 1 140px}
+input[type=text],input[type=date],input[type=url],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit}
+textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.check{display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;line-height:1.2}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(.95)}
+.btn.wa{background:#25d366;border-color:#25d366;color:#06301a}
+.btn.block{width:100%}
+.btn.sm{padding:7px 11px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--surface-2);font-size:13px;font-weight:600}
+.pill.ok{background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.banner{padding:10px 14px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:13px;margin-bottom:14px}
+.banner.ok{background:var(--accent-soft);color:var(--accent)}
+.copy{display:flex;gap:8px}
+.copy input{flex:1;min-width:0;font-size:13px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.people{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tabs{display:flex;background:var(--surface-2);border-radius:10px;padding:3px;margin-bottom:12px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:8px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+/* grid */
+.grid-wrap{overflow-x:auto;margin:0 -4px;padding:0 4px 4px}
+.grid{display:grid;gap:2px;user-select:none;-webkit-user-select:none;min-width:max-content}
+.gh{font-size:12px;text-align:center;padding:4px 2px 6px;color:var(--muted);line-height:1.2;border-radius:6px;cursor:pointer}
+.gh b{display:block;color:var(--text);font-size:13px}
+.gh:hover{background:var(--surface-2)}
+.gt{font-size:11px;color:var(--muted);text-align:right;padding-right:6px;line-height:22px;height:22px;white-space:nowrap}
+.gc{height:22px;border-radius:4px;background:var(--surface-2);touch-action:none;cursor:pointer;position:relative}
+.gc.hr{margin-top:3px}
+.gc.sel{background:var(--sel)}
+.gc.busy{background:repeating-linear-gradient(135deg,var(--busy) 0 4px,transparent 4px 8px),var(--surface-2)}
+.gc.busy.sel{background:repeating-linear-gradient(135deg,rgba(0,0,0,.18) 0 4px,transparent 4px 8px),var(--sel)}
+.gc.ro{cursor:default}
+.gc.ro .n{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--text);opacity:.75}
+.gc.best{outline:2px solid var(--warn);outline-offset:-1px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-3px;margin-right:5px}
+/* slots */
+.slot{border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.slot .medal{font-size:22px;line-height:1}
+.slot .body{flex:1;min-width:0}
+.slot .when{font-weight:700;font-size:16px}
+.slot.first{border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin:8px 0}
+.bar span{display:block;height:100%;background:var(--accent)}
+.final{text-align:center}
+.final .big{font-size:24px;font-weight:800;margin:6px 0}
+.countdown{font-variant-numeric:tabular-nums}
+footer{margin-top:24px;text-align:center;font-size:12px;color:var(--muted)}
+.hide{display:none!important}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+@media (max-width:480px){
+  h1{font-size:20px}
+  .card{padding:14px}
+  .copy{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#/"><span class="dot">⏱</span> Спільний час</a>
+    <span id="modeBadge" class="pill hide"></span>
+  </header>
+  <main id="app"></main>
+  <footer>Прототип · у демо-режимі дані зберігаються лише в цьому браузері</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =========================================================================
+ * Спільний час — прототип планувальника дзвінків
+ *  • Організатор створює дзвінок (тема, тривалість, дати, години, дедлайн)
+ *  • Учасники відкривають посилання і відмічають зручні слоти
+ *    (можна «підтягнути» зайнятість з Google Calendar — у прототипі симуляція)
+ *  • Після дедлайну організатор бачить топ-3 слоти й обирає один
+ * Дві схеми зберігання: API (server.js) або localStorage (демо, без сервера)
+ * ========================================================================= */
+
+const STEP = 30;                 // крок сітки, хв
+const TZ = 'Europe/Kyiv';        // часовий пояс дзвінків (прототип: один для всіх)
+
+/* ---------------- утиліти ---------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = (n = 10) => { const a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join(''); };
+const pad = n => String(n).padStart(2, '0');
+const hm = min => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+const norm = s => String(s || '').trim().toLowerCase();
+const dObj = d => new Date(d + 'T12:00:00Z');
+const isoDate = dt => dt.toISOString().slice(0, 10);
+const addDays = (d, n) => { const x = dObj(d); x.setUTCDate(x.getUTCDate() + n); return isoDate(x); };
+const todayLocal = () => { const n = new Date(); return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`; };
+const fmtDay = d => new Intl.DateTimeFormat('uk-UA', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(dObj(d));
+const fmtDayLong = d => new Intl.DateTimeFormat('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(dObj(d));
+const fmtWeekday = d => new Intl.DateTimeFormat('uk-UA', { weekday: 'short', timeZone: 'UTC' }).format(dObj(d));
+const fmtDateNum = d => new Intl.DateTimeFormat('uk-UA', { day: 'numeric', month: 'numeric', timeZone: 'UTC' }).format(dObj(d));
+const fmtDeadline = ms => new Intl.DateTimeFormat('uk-UA', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
+const plural = (n, one, few, many) => { const a = n % 10, b = n % 100; return n + ' ' + (a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 10 || b >= 20) ? few : many); };
+function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { return () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2200); }
+async function copyText(text) { try { await navigator.clipboard.writeText(text); toast('Скопійовано'); } catch { prompt('Скопіюйте вручну:', text); } }
+const safeLS = {
+  get(k) { try { return localStorage.getItem(k); } catch { return safeLS.mem[k] ?? null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { safeLS.mem[k] = v; } },
+  mem: {}
+};
+function baseUrl() { return location.href.split('#')[0]; }
+function waLink(text) { return 'https://wa.me/?text=' + encodeURIComponent(text); }
+
+/* ---------------- модель ---------------- */
+function pollDays(p) {
+  const out = [];
+  for (let d = p.dateFrom; d <= p.dateTo; d = addDays(d, 1)) {
+    const wd = dObj(d).getUTCDay();
+    if (p.skipWeekends && (wd === 0 || wd === 6)) continue;
+    out.push(d);
+  }
+  return out;
+}
+function pollTimes(p) { const out = []; for (let m = p.hourFrom * 60; m < p.hourTo * 60; m += STEP) out.push(m); return out; }
+const cellKey = (d, m) => `${d}|${m}`;
+const isClosed = p => !!p.closedAt || Date.now() >= p.deadline;
+
+/** Рахує всі можливі старти та повертає топ-N слотів без перетинів. */
+function rankSlots(poll, responses, topN = 3) {
+  const need = Math.ceil(poll.duration / STEP);
+  const sets = responses.map(r => ({ name: r.name, cells: new Set(r.cells) }));
+  const cands = [];
+  for (const d of pollDays(poll)) {
+    for (let m = poll.hourFrom * 60; m + poll.duration <= poll.hourTo * 60; m += STEP) {
+      const keys = Array.from({ length: need }, (_, i) => cellKey(d, m + i * STEP));
+      const yes = [], no = [];
+      for (const s of sets) (keys.every(k => s.cells.has(k)) ? yes : no).push(s.name);
+      if (yes.length) cands.push({ date: d, start: m, end: m + poll.duration, yes, no });
+    }
+  }
+  cands.sort((a, b) => b.yes.length - a.yes.length || (a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start));
+  const picked = [];
+  for (const c of cands) {
+    if (picked.some(p => p.date === c.date && c.start < p.end && p.start < c.end)) continue;
+    picked.push(c);
+    if (picked.length >= topN) break;
+  }
+  return picked;
+}
+
+/** Імена очікуваних учасників, які ще не відповіли. */
+function missingPeople(poll, responses) {
+  const got = new Set(responses.map(r => norm(r.name)));
+  return (poll.expected || []).filter(n => !got.has(norm(n)));
+}
+
+/** Симуляція Google Calendar: детерміновані «зайняті» блоки для імені. */
+function fakeBusy(poll, name) {
+  const r = rng(hashStr(norm(name) + poll.id));
+  const busy = new Set();
+  for (const d of pollDays(poll)) {
+    const blocks = 1 + Math.floor(r() * 3);
+    for (let b = 0; b < blocks; b++) {
+      const len = 2 + Math.floor(r() * 4);
+      const start = poll.hourFrom * 60 + Math.floor(r() * ((poll.hourTo - poll.hourFrom) * 2)) * STEP;
+      for (let i = 0; i < len; i++) { const m = start + i * STEP; if (m < poll.hourTo * 60) busy.add(cellKey(d, m)); }
+    }
+  }
+  return busy;
+}
+
+/* ---------------- сховище ---------------- */
+const Store = {
+  mode: 'local',
+  async init() {
+    try {
+      const r = await fetch('api/health', { cache: 'no-store' });
+      if (r.ok && (await r.json()).ok) { this.mode = 'api'; return; }
+    } catch {}
+    this.mode = 'local';
+  },
+  _db() { try { return JSON.parse(safeLS.get('cp_db') || '{"polls":{}}'); } catch { return { polls: {} }; } },
+  _save(db) { safeLS.set('cp_db', JSON.stringify(db)); },
+  async _api(method, url, body) {
+    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Помилка сервера');
+    return j;
+  },
+  async createPoll(data) {
+    if (this.mode === 'api') return this._api('POST', 'api/polls', data);
+    const db = this._db();
+    const poll = { ...data, id: uid(8), adminToken: uid(16), createdAt: Date.now(), closedAt: null, final: null, responses: [] };
+    db.polls[poll.id] = poll; this._save(db);
+    return { id: poll.id, adminToken: poll.adminToken };
+  },
+  async getPoll(id) {
+    if (this.mode === 'api') return this._api('GET', 'api/polls/' + encodeURIComponent(id));
+    const p = this._db().polls[id];
+    if (!p) throw new Error('Дзвінок не знайдено');
+    const { adminToken, responses, ...poll } = p;
+    return { poll, responses };
+  },
+  async saveResponse(id, resp) {
+    if (this.mode === 'api') return this._api('POST', `api/polls/${encodeURIComponent(id)}/responses`, resp);
+    const db = this._db(), p = db.polls[id];
+    if (!p) throw new Error('Дзвінок не знайдено');
+    if (isClosed(p)) throw new Error('Збір відповідей уже завершено');
+    let r = resp.id && p.responses.find(x => x.id === resp.id);
+    if (!r) r = p.responses.find(x => norm(x.name) === norm(resp.name));
+    if (r) Object.assign(r, { name: resp.name, cells: resp.cells, source: resp.source, updatedAt: Date.now() });
+    else { r = { id: uid(10), name: resp.name, cells: resp.cells, source: resp.source, updatedAt: Date.now() }; p.responses.push(r); }
+    this._save(db);
+    return { id: r.id };
+  },
+  async adminAction(id, token, action, payload = {}) {
+    if (this.mode === 'api') return this._api('POST', `api/polls/${encodeURIComponent(id)}/${action}`, { adminToken: token, ...payload });
+    const db = this._db(), p = db.polls[id];
+    if (!p || p.adminToken !== token) throw new Error('Немає доступу');
+    if (action === 'close') p.closedAt = Date.now();
+    if (action === 'finalize') p.final = payload.final;
+    this._save(db);
+    return { ok: true };
+  },
+  async checkAdmin(id, token) {
+    if (this.mode === 'api') return (await this._api('POST', `api/polls/${encodeURIComponent(id)}/check`, { adminToken: token })).ok;
+    const p = this._db().polls[id];
+    return !!p && p.adminToken === token;
+  }
+};
+
+/* ---------------- рендер сітки ---------------- */
+/**
+ * opts.mode: 'edit' | 'heat'
+ * edit: opts.selected (Set), opts.busy (Set), opts.onChange()
+ * heat: opts.responses, opts.highlight (slot)
+ */
+function renderGrid(container, poll, opts) {
+  const days = pollDays(poll), times = pollTimes(poll);
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  grid.style.gridTemplateColumns = `44px repeat(${days.length}, minmax(42px, 1fr))`;
+  let html = '<div></div>';
+  for (const d of days) html += `<div class="gh" data-day="${d}" title="${opts.mode === 'edit' ? 'Натисніть, щоб виділити / зняти весь день' : esc(fmtDayLong(d))}">${esc(fmtWeekday(d))}<b>${esc(fmtDateNum(d))}</b></div>`;
+
+  let counts = null, names = null, total = 0;
+  if (opts.mode === 'heat') {
+    counts = new Map(); names = new Map(); total = opts.responses.length;
+    for (const r of opts.responses) for (const k of r.cells) {
+      counts.set(k, (counts.get(k) || 0) + 1);
+      if (!names.has(k)) names.set(k, []); names.get(k).push(r.name);
+    }
+  }
+  const hl = opts.highlight;
+  for (const m of times) {
+    const isHour = m % 60 === 0;
+    html += `<div class="gt${isHour ? '' : ' half'}">${isHour ? hm(m) : ''}</div>`;
+    for (const d of days) {
+      const k = cellKey(d, m);
+      const cls = ['gc'];
+      if (isHour && m !== times[0]) cls.push('hr');
+      if (opts.mode === 'edit') {
+        if (opts.selected.has(k)) cls.push('sel');
+        if (opts.busy && opts.busy.has(k)) cls.push('busy');
+        html += `<div class="${cls.join(' ')}" data-key="${k}"></div>`;
+      } else {
+        cls.push('ro');
+        if (hl && hl.date === d && m >= hl.start && m < hl.end) cls.push('best');
+        const c = counts.get(k) || 0;
+        const a = total ? c / total : 0;
+        const bg = c ? `background:rgba(var(--heat-rgb),${(0.18 + 0.82 * a).toFixed(2)})` : '';
+        const tip = c ? `${hm(m)} — ${c}/${total}: ${(names.get(k) || []).join(', ')}` : `${hm(m)} — нікому не зручно`;
+        html += `<div class="${cls.join(' ')}" style="${bg}" title="${esc(tip)}">${c ? `<span class="n">${c}</span>` : ''}</div>`;
+      }
+    }
+  }
+  grid.innerHTML = html;
+  container.innerHTML = '';
+  container.appendChild(grid);
+
+  if (opts.mode !== 'edit' || opts.readOnly) return;
+  let dragging = false, addMode = true;
+  const apply = el => {
+    const k = el?.dataset?.key; if (!k) return;
+    if (addMode) opts.selected.add(k); else opts.selected.delete(k);
+    el.classList.toggle('sel', addMode);
+  };
+  grid.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.gc'); if (!el) return;
+    e.preventDefault();
+    dragging = true; addMode = !opts.selected.has(el.dataset.key);
+    apply(el);
+  });
+  grid.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    apply(document.elementFromPoint(e.clientX, e.clientY)?.closest?.('.gc'));
+  });
+  const stop = () => { if (dragging) { dragging = false; opts.onChange && opts.onChange(); } };
+  window.addEventListener('pointerup', stop);
+  window.addEventListener('pointercancel', stop);
+  grid.querySelectorAll('.gh').forEach(h => h.addEventListener('click', () => {
+    const d = h.dataset.day;
+    const keys = times.map(m => cellKey(d, m));
+    const all = keys.every(k => opts.selected.has(k));
+    keys.forEach(k => all ? opts.selected.delete(k) : opts.selected.add(k));
+    renderGrid(container, poll, opts);
+    opts.onChange && opts.onChange();
+  }));
+}
+
+/* ---------------- відлік часу ---------------- */
+function countdownText(deadline) {
+  let s = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+  if (!s) return 'час вийшов';
+  const d = Math.floor(s / 86400); s %= 86400;
+  const h = Math.floor(s / 3600); s %= 3600;
+  const m = Math.floor(s / 60); s %= 60;
+  return (d ? `${d} д ` : '') + `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+let tickTimer = null;
+function startTicker(deadline, onExpire) {
+  clearInterval(tickTimer);
+  const tick = () => {
+    document.querySelectorAll('[data-countdown]').forEach(el => el.textContent = countdownText(deadline));
+    if (Date.now() >= deadline) { clearInterval(tickTimer); onExpire && onExpire(); }
+  };
+  tick();
+  if (Date.now() < deadline) tickTimer = setInterval(tick, 1000);
+}
+
+/* ---------------- сторінки ---------------- */
+const app = $('#app');
+
+function viewCreate() {
+  const t = addDays(todayLocal(), 1);
+  app.innerHTML = `
+  <div class="card">
+    <h1>Новий дзвінок</h1>
+    <p class="muted">Заповніть 4 поля, надішліть посилання в групу. Кожен відмітить, коли йому зручно, а система покаже найкращий час.</p>
+  </div>
+  <form class="card" id="f">
+    <div class="field"><label for="title">Тема дзвінка</label>
+      <input type="text" id="title" maxlength="120" placeholder="Напр., Спільна закупівля на грудень" required></div>
+    <div class="row">
+      <div class="field"><label for="org">Ваше ім'я</label><input type="text" id="org" maxlength="60" placeholder="Організатор" required></div>
+      <div class="field"><label for="dur">Тривалість</label>
+        <select id="dur"><option value="30">30 хв</option><option value="45">45 хв</option><option value="60" selected>1 година</option><option value="90">1,5 години</option><option value="120">2 години</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="df">Шукати з</label><input type="date" id="df" value="${t}" min="${todayLocal()}" required></div>
+      <div class="field"><label for="dt">по</label><input type="date" id="dt" value="${addDays(t, 6)}" min="${todayLocal()}" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="hf">Години з</label><select id="hf">${hourOpts(10)}</select></div>
+      <div class="field"><label for="ht">до</label><select id="ht">${hourOpts(20, 1)}</select></div>
+    </div>
+    <div class="field"><label class="check"><input type="checkbox" id="we" checked> Без вихідних (сб, нд)</label></div>
+    <div class="field"><label for="dl">Скільки часу на відповіді</label>
+      <select id="dl"><option value="12">12 годин</option><option value="24">24 години</option><option value="48" selected>48 годин</option><option value="72">3 дні</option></select></div>
+    <div class="field"><label for="exp">Хто має відповісти <span class="muted">(необов'язково, через кому)</span></label>
+      <textarea id="exp" placeholder="Олена, Андрій, Марта, Ігор"></textarea>
+      <p class="small muted" style="margin-top:6px">Тоді буде видно, хто ще не відповів, і можна нагадати їм одним натисканням.</p></div>
+    <p class="small" id="err" style="color:var(--danger)"></p>
+    <button class="btn primary block" type="submit">Створити й отримати посилання</button>
+  </form>`;
+  $('#f').addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = {
+      title: $('#title').value.trim(), organizer: $('#org').value.trim(),
+      duration: +$('#dur').value, dateFrom: $('#df').value, dateTo: $('#dt').value,
+      hourFrom: +$('#hf').value, hourTo: +$('#ht').value, skipWeekends: $('#we').checked,
+      deadline: Date.now() + +$('#dl').value * 3600e3, tz: TZ,
+      expected: $('#exp').value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean).slice(0, 50)
+    };
+    const err = validatePoll(data);
+    if (err) { $('#err').textContent = err; return; }
+    try {
+      const { id, adminToken } = await Store.createPoll(data);
+      safeLS.set('cp_admin_' + id, adminToken);
+      location.hash = `#/a/${id}/${adminToken}?new=1`;
+    } catch (ex) { $('#err').textContent = ex.message; }
+  });
+}
+function hourOpts(sel, shift = 0) { let s = ''; for (let h = 0 + shift; h <= 23 + shift; h++) s += `<option value="${h}"${h === sel ? ' selected' : ''}>${pad(h)}:00</option>`; return s; }
+function validatePoll(d) {
+  if (!d.title) return 'Вкажіть тему дзвінка';
+  if (!d.organizer) return "Вкажіть своє ім'я";
+  if (!d.dateFrom || !d.dateTo || d.dateTo < d.dateFrom) return 'Перевірте діапазон дат';
+  if ((dObj(d.dateTo) - dObj(d.dateFrom)) / 864e5 > 20) return 'Діапазон дат — не більше 3 тижнів';
+  if (d.hourTo <= d.hourFrom) return 'Кінцева година має бути пізніше за початкову';
+  if (d.duration > (d.hourTo - d.hourFrom) * 60) return 'Дзвінок довший, ніж вікно годин';
+  if (!pollDays(d).length) return 'У вибраному діапазоні немає жодного дня (усі — вихідні?)';
+  return '';
+}
+
+function headerCard(poll, responses, extra = '') {
+  const closed = isClosed(poll);
+  return `<div class="card">
+    <h1>${esc(poll.title)}</h1>
+    <p class="muted" style="margin:0">Організатор: ${esc(poll.organizer)} · ${poll.duration} хв · ${pad(poll.hourFrom)}:00–${pad(poll.hourTo)}:00 · ${esc(fmtDay(poll.dateFrom))} – ${esc(fmtDay(poll.dateTo))}</p>
+    <div class="meta">
+      ${poll.final ? '<span class="pill ok">✓ Час обрано</span>'
+        : closed ? '<span class="pill">Збір завершено</span>'
+        : `<span class="pill warn">⏳ До кінця збору: <span class="countdown" data-countdown></span></span>`}
+      <span class="pill">Відповіли: ${responses.length}${poll.expected?.length ? ' з ' + (responses.length + missingPeople(poll, responses).length) : ''}</span>
+    </div>
+    ${extra}
+  </div>`;
+}
+
+function finalCard(poll, forAdmin) {
+  const f = poll.final;
+  const start = f.start, d = f.date;
+  const g = gcalLink(poll, d, start);
+  return `<div class="card final">
+    <div class="muted">Дзвінок призначено</div>
+    <div class="big">${esc(fmtDayLong(d))}, ${hm(start)}–${hm(start + poll.duration)}</div>
+    <p class="muted">${esc(poll.title)} · час за Києвом</p>
+    ${f.link ? `<p><a href="${esc(f.link)}" target="_blank" rel="noopener">${esc(f.link)}</a></p>` : ''}
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="${esc(g)}" target="_blank" rel="noopener">📅 Додати в Google Calendar</a>
+      ${forAdmin ? `<a class="btn wa" href="${esc(waLink(finalText(poll)))}" target="_blank" rel="noopener">Надіслати в WhatsApp</a>
+      <button class="btn" id="unfinal">Обрати інший час</button>` : ''}
+    </div>
+  </div>`;
+}
+function gcalLink(poll, d, start) {
+  const ymd = d.replace(/-/g, '');
+  const t = m => `${pad(Math.floor(m / 60))}${pad(m % 60)}00`;
+  const details = (poll.final?.link ? 'Посилання: ' + poll.final.link + '\n\n' : '') + 'Створено через «Спільний час»';
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    + '&text=' + encodeURIComponent(poll.title)
+    + '&dates=' + ymd + 'T' + t(start) + '/' + ymd + 'T' + t(start + poll.duration)
+    + '&ctz=' + encodeURIComponent(poll.tz || TZ)
+    + '&details=' + encodeURIComponent(details);
+}
+function finalText(poll) {
+  const f = poll.final;
+  return `📞 Дзвінок «${poll.title}» призначено!\n🗓 ${fmtDayLong(f.date)}, ${hm(f.start)}–${hm(f.start + poll.duration)} (за Києвом)`
+    + (f.link ? `\n🔗 ${f.link}` : '') + `\n\nДодати в календар: ${gcalLink(poll, f.date, f.start)}`;
+}
+
+/* ---- сторінка учасника ---- */
+async function viewParticipant(id) {
+  const { poll, responses } = await Store.getPoll(id);
+  const meId = safeLS.get('cp_me_' + id);
+  const me = responses.find(r => r.id === meId);
+  const closed = isClosed(poll);
+  const adminTok = safeLS.get('cp_admin_' + id);
+
+  if (poll.final) {
+    app.innerHTML = headerCard(poll, responses) + finalCard(poll, false);
+    return;
+  }
+
+  const state = { selected: new Set(me ? me.cells : []), busy: null, source: me?.source || 'manual', tab: closed ? 'heat' : 'mine' };
+
+  app.innerHTML = headerCard(poll, responses,
+    adminTok ? `<p class="small" style="margin:10px 0 0"><a href="#/a/${id}/${adminTok}">→ Панель організатора</a></p>` : '') + `
+  ${closed ? `<div class="banner">Збір відповідей завершено. Організатор скоро обере час.</div>` : `
+  <div class="card">
+    <div class="field"><label for="nm">Ваше ім'я</label>
+      <input type="text" id="nm" maxlength="60" placeholder="Як вас звати?" value="${esc(me?.name || '')}"></div>
+    <button class="btn block" id="gcal">📅 Підтягнути вільний час з Google Calendar</button>
+    <p class="small muted" style="margin:8px 0 0" id="gcalNote">Ми побачимо лише «зайнято / вільно», без назв подій. Вільні слоти позначаться автоматично, лишиться тільки перевірити.</p>
+  </div>`}
+  <div class="card">
+    <div class="tabs"><button data-tab="mine" class="${state.tab === 'mine' ? 'on' : ''}" ${closed ? 'disabled' : ''}>Мій час</button><button data-tab="heat" class="${state.tab === 'heat' ? 'on' : ''}">Як зручно всім</button></div>
+    <p class="small muted" id="hint"></p>
+    <div class="grid-wrap" id="grid"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  ${closed ? '' : `<div class="card" style="position:sticky;bottom:8px;z-index:2">
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="flex:1" class="small"><b id="cnt">0</b> <span class="muted">слотів вибрано</span></div>
+      <button class="btn primary" id="save">${me ? 'Оновити відповідь' : 'Готово'}</button>
+    </div>
+  </div>`}`;
+
+  const draw = () => {
+    $('#hint').textContent = state.tab === 'mine'
+      ? 'Торкніться або проведіть пальцем по клітинках, коли вам зручно. Натисніть на день, щоб виділити його повністю.'
+      : 'Чим темніший колір, тим більше людям зручно. Цифра означає, скільки людей можуть у цей час.';
+    if (state.tab === 'mine') {
+      renderGrid($('#grid'), poll, { mode: 'edit', selected: state.selected, busy: state.busy, onChange: updCnt });
+      $('#legend').innerHTML = `<span><i style="background:var(--sel)"></i>мені зручно</span>${state.busy ? '<span><i style="background:repeating-linear-gradient(135deg,var(--busy) 0 3px,transparent 3px 6px)"></i>зайнято в календарі</span>' : ''}`;
+    } else {
+      renderGrid($('#grid'), poll, { mode: 'heat', responses });
+      $('#legend').innerHTML = `<span><i style="background:rgba(var(--heat-rgb),.25)"></i>мало кому</span><span><i style="background:rgba(var(--heat-rgb),1)"></i>усім</span>`;
+    }
+    updCnt();
+  };
+  const updCnt = () => { const c = $('#cnt'); if (c) c.textContent = state.selected.size; };
+  app.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+    state.tab = b.dataset.tab;
+    app.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b));
+    draw();
+  }));
+  draw();
+  if (!closed) startTicker(poll.deadline, () => route());
+
+  if (closed) return;
+  $('#gcal').addEventListener('click', () => {
+    const name = $('#nm').value.trim();
+    if (!name) { $('#nm').focus(); toast("Спершу вкажіть ім'я"); return; }
+    // ПРОТОТИП: у справжній версії тут Google OAuth + FreeBusy API
+    state.busy = fakeBusy(poll, name);
+    state.selected.clear();
+    for (const d of pollDays(poll)) for (const m of pollTimes(poll)) { const k = cellKey(d, m); if (!state.busy.has(k)) state.selected.add(k); }
+    state.source = 'google'; state.tab = 'mine';
+    app.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === 'mine'));
+    $('#gcal').textContent = '✓ Календар підключено (демо)';
+    $('#gcalNote').textContent = 'Усі вільні слоти позначено. Зніміть ті, які не підходять (наприклад, коли ви в дорозі), і натисніть «Готово».';
+    draw();
+  });
+  $('#save').addEventListener('click', async () => {
+    const name = $('#nm').value.trim();
+    if (!name) { $('#nm').focus(); toast("Вкажіть своє ім'я"); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (!state.selected.size && !confirm('Ви не вибрали жодного слоту. Це означає, що вам не підходить жоден час. Зберегти?')) return;
+    try {
+      const { id: rid } = await Store.saveResponse(id, { id: meId, name, cells: [...state.selected], source: state.source });
+      safeLS.set('cp_me_' + id, rid);
+      toast('Дякуємо! Відповідь збережено');
+      route();
+    } catch (ex) { toast(ex.message); }
+  });
+}
+
+/* ---- сторінка організатора ---- */
+async function viewAdmin(id, token, isNew) {
+  const ok = await Store.checkAdmin(id, token).catch(() => false);
+  if (!ok) { app.innerHTML = `<div class="card"><h1>Немає доступу</h1><p class="muted">Посилання організатора неправильне.</p><a class="btn" href="#/p/${esc(id)}">Відкрити як учасник</a></div>`; return; }
+  safeLS.set('cp_admin_' + id, token);
+  const { poll, responses } = await Store.getPoll(id);
+  const closed = isClosed(poll);
+  const pLink = baseUrl() + '#/p/' + id;
+  const aLink = baseUrl() + `#/a/${id}/${token}`;
+  const missing = missingPeople(poll, responses);
+  const slots = rankSlots(poll, responses);
+  const inviteText = `Привіт! 👋 Плануємо дзвінок «${poll.title}». Відмітьте, будь ласка, коли вам зручно (займе хвилину). Збір до ${fmtDeadline(poll.deadline)}:\n${pLink}`;
+  const remindText = `Нагадування 🙂 ${missing.length ? missing.join(', ') + ', в' : 'В'}ідмітьте, будь ласка, зручний час для дзвінка «${poll.title}» до ${fmtDeadline(poll.deadline)}:\n${pLink}`;
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const total = responses.length;
+  const slotsHtml = slots.length ? slots.map((s, i) => `
+    <div class="slot${i === 0 ? ' first' : ''}">
+      <div class="medal">${medals[i]}</div>
+      <div class="body">
+        <div class="when">${esc(fmtDayLong(s.date))}, ${hm(s.start)}–${hm(s.end)}</div>
+        <div class="bar"><span style="width:${Math.round(s.yes.length / total * 100)}%"></span></div>
+        <div class="small"><b>${s.yes.length === total ? 'Можуть усі ' + total : `Можуть ${s.yes.length} з ${total}`}</b>${s.no.length ? ` · <span class="muted">не можуть: ${esc(s.no.join(', '))}</span>` : ''}</div>
+        ${missing.length ? `<div class="small muted">ще не відповіли: ${esc(missing.join(', '))}</div>` : ''}
+      </div>
+      ${poll.final ? '' : `<button class="btn ${i === 0 ? 'primary' : ''} sm" data-pick="${i}">Обрати</button>`}
+    </div>`).join('')
+    : `<p class="muted">${total ? 'Спільного часу поки немає: ніхто не вибрав слоти, що вміщують дзвінок повністю.' : 'Поки ніхто не відповів. Найкращі варіанти з\'являться тут.'}</p>`;
+
+  app.innerHTML = `
+  ${isNew ? '<div class="banner ok">✓ Дзвінок створено! Надішліть посилання в групу WhatsApp.</div>' : ''}
+  ${headerCard(poll, responses)}
+  ${poll.final ? finalCard(poll, true) : ''}
+  ${poll.final ? '' : `<div class="card">
+    <h2>Посилання для учасників</h2>
+    <div class="copy"><input type="text" readonly value="${esc(pLink)}"><button class="btn sm" id="cpP">Копіювати</button></div>
+    <div class="actions" style="margin-top:10px">
+      <a class="btn wa" href="${esc(waLink(inviteText))}" target="_blank" rel="noopener">Надіслати в WhatsApp</a>
+      <a class="btn" href="#/p/${id}">Відмітити свій час</a>
+    </div>
+  </div>`}
+  ${poll.final ? '' : `<div class="card">
+    <h2>Хто відповів</h2>
+    <div class="people">
+      ${responses.map(r => `<span class="pill ok">✓ ${esc(r.name)}${r.source === 'google' ? ' 📅' : ''}</span>`).join('') || '<span class="muted small">Поки нікого</span>'}
+      ${missing.map(n => `<span class="pill">${esc(n)}</span>`).join('')}
+    </div>
+    ${!closed ? `<div class="actions" style="margin-top:12px">
+      <a class="btn sm" href="${esc(waLink(remindText))}" target="_blank" rel="noopener">🔔 Нагадати${missing.length ? ' (' + missing.length + ')' : ''} у WhatsApp</a>
+      <button class="btn sm" id="closeNow">Завершити збір зараз</button>
+      <button class="btn sm" id="demo" title="Додає вигаданих учасників, щоб подивитися, як працюють результати">+ Тестові учасники</button>
+    </div>` : ''}
+  </div>`}
+  <div class="card">
+    <h2>${poll.final ? 'Варіанти' : closed ? 'Найкращі варіанти. Оберіть час' : 'Поточні лідери'}</h2>
+    ${!closed && !poll.final ? '<p class="small muted">Збір ще триває, тож картина може змінитися. Обрати час можна вже зараз або дочекатися кінця таймера.</p>' : ''}
+    ${!poll.final && slots.length ? `<div class="field"><label for="meet">Посилання на дзвінок <span class="muted">(Meet / Zoom, необов'язково)</span></label><input type="url" id="meet" placeholder="https://meet.google.com/..."></div>` : ''}
+    ${slotsHtml}
+  </div>
+  <div class="card">
+    <h2>Загальна картина</h2>
+    <div class="grid-wrap" id="grid"></div>
+    <div class="legend"><span><i style="background:rgba(var(--heat-rgb),.25)"></i>мало кому</span><span><i style="background:rgba(var(--heat-rgb),1)"></i>усім</span><span><i style="outline:2px solid var(--warn);outline-offset:-2px;background:transparent"></i>найкращий слот</span></div>
+  </div>
+  <div class="card"><h2>Ваше посилання організатора</h2>
+    <p class="small muted">Збережіть його: лише за ним можна обрати фінальний час.</p>
+    <div class="copy"><input type="text" readonly value="${esc(aLink)}"><button class="btn sm" id="cpA">Копіювати</button></div>
+  </div>`;
+
+  renderGrid($('#grid'), poll, { mode: 'heat', responses, highlight: poll.final ? { date: poll.final.date, start: poll.final.start, end: poll.final.start + poll.duration } : slots[0] });
+  if (!closed && !poll.final) startTicker(poll.deadline, () => route());
+
+  $('#cpP')?.addEventListener('click', () => copyText(pLink));
+  $('#cpA')?.addEventListener('click', () => copyText(aLink));
+  $('#closeNow')?.addEventListener('click', async () => {
+    if (!confirm('Завершити збір відповідей зараз?')) return;
+    await Store.adminAction(id, token, 'close'); route();
+  });
+  $('#unfinal')?.addEventListener('click', async () => { await Store.adminAction(id, token, 'finalize', { final: null }); route(); });
+  app.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', async () => {
+    const s = slots[+b.dataset.pick];
+    const link = ($('#meet')?.value || '').trim();
+    if (link && !/^https?:\/\//i.test(link)) { toast('Посилання має починатися з https://'); return; }
+    await Store.adminAction(id, token, 'finalize', { final: { date: s.date, start: s.start, link } });
+    toast('Час обрано!');
+    route();
+  }));
+  $('#demo')?.addEventListener('click', async () => {
+    const pool = ['Олена', 'Андрій', 'Марта', 'Ігор', 'Світлана', 'Богдан', 'Наталія', 'Тарас'];
+    const taken = new Set(responses.map(r => norm(r.name)));
+    const names = [...missing, ...pool].filter((n, i, a) => !taken.has(norm(n)) && a.findIndex(x => norm(x) === norm(n)) === i).slice(0, 4);
+    for (const n of names) {
+      const busy = fakeBusy(poll, n), cells = [];
+      const r = rng(hashStr(n));
+      for (const d of pollDays(poll)) for (const m of pollTimes(poll)) { const k = cellKey(d, m); if (!busy.has(k) && r() > 0.25) cells.push(k); }
+      await Store.saveResponse(id, { name: n, cells, source: 'google' });
+    }
+    toast('Додано тестових учасників: ' + names.length);
+    route();
+  });
+  if (isNew) history.replaceState(null, '', `#/a/${id}/${token}`);
+}
+
+/* ---------------- роутер ---------------- */
+async function route() {
+  clearInterval(tickTimer);
+  const h = location.hash.replace(/^#\/?/, '');
+  const [path, query] = h.split('?');
+  const parts = path.split('/').filter(Boolean);
+  try {
+    if (parts[0] === 'p' && parts[1]) await viewParticipant(parts[1]);
+    else if (parts[0] === 'a' && parts[1] && parts[2]) await viewAdmin(parts[1], parts[2], /(^|&)new=1/.test(query || ''));
+    else viewCreate();
+  } catch (ex) {
+    app.innerHTML = `<div class="card"><h1>Упс</h1><p class="muted">${esc(ex.message)}</p><a class="btn" href="#/">Створити новий дзвінок</a></div>`;
+  }
+}
+
+(async () => {
+  await Store.init();
+  const b = $('#modeBadge');
+  if (Store.mode === 'local') { b.textContent = 'Демо-режим'; b.title = 'Дані зберігаються лише в цьому браузері. Запустіть server.js, щоб ділитися посиланнями.'; b.classList.remove('hide'); }
+  else document.querySelector('footer').textContent = 'Прототип';
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
+</body>
+</html>
